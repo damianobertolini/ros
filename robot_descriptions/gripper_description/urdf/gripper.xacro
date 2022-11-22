@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<robot name="gripper" xmlns:xacro="http://ros.org/wiki/xacro">
+		
+		<xacro:include filename="$(find gripper_description)/urdf/gripper.macro.xacro" />
+		<xacro:arg name="transmission_hw_interface" default="hardware_interface/EffortJointInterface" />
+		<xacro:arg name="grasp_plugin" default="false" />
+		<xacro:arg name="gripper_active" default="false" />
+
+ 		<xacro:gripper 
+			transmission_hw_interface="$(arg transmission_hw_interface)"			
+			grasp_plugin="$(arg grasp_plugin)"			
+			gripper_active="$(arg gripper_active)"/>
+
+
+ 
+</robot>
