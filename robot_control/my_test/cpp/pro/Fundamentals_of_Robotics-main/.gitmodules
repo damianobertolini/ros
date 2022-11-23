@@ -1,0 +1,12 @@
+[submodule "ur5_kinematics"]
+	path = ur5_kinematics
+	url = https://github.com/fedebone00/ur5_kinematics.git
+[submodule "Vision"]
+	path = Vision
+	url = https://github.com/Gio200023/lego_recognizer_yolov5
+[submodule "Pcl_Rotation"]
+	path = Pcl_Rotation
+	url = https://github.com/EdoardoCisco/Pcl_Rotation.git
+[submodule "ur5_gazebo"]
+	path = ur5_gazebo
+	url = https://github.com/Gio200023/ur5_gazebo

@@ -9,6 +9,7 @@ from __future__ import print_function
 import os
 import rospy as ros
 import threading
+import csv
 
 # messages for topic subscribers
 from sensor_msgs.msg import JointState
@@ -29,23 +30,20 @@ import rospkg
 
 # other utils
 from base_controllers.utils.ros_publish import RosPub
-
-import base_controllers.utils.ros_publish.RosPub
 from base_controllers.utils.pidManager import PidManager
 from base_controllers.utils.utils import Utils
 from base_controllers.utils.math_tools import *
-import numpy as np
 from numpy import nan
 from base_controllers.utils.common_functions import getRobotModel
 
 np.set_printoptions(threshold=np.inf, precision=5, linewidth=1000, suppress=True)
-
 from termcolor import colored
 import matplotlib.pyplot as plt
 import distro
 import rosgraph
 import rosnode
 import sys
+import time as tm
 
 import base_controllers.params as conf
 
@@ -157,7 +155,7 @@ class BaseControllerFixed(threading.Thread):
         ros.sleep(1.0)
         print(colored('SIMULATION Started', 'blue'))
 
-    def loadModelAndPublishers(self, xacro_path=None):
+    def loadModelAndPublishers(self, xacro_path=None, node_name="my_test"):
 
         # Loading a robot model of robot (Pinocchio)
         if xacro_path is None:
@@ -167,7 +165,7 @@ class BaseControllerFixed(threading.Thread):
             print("loading custom xacro path: ", xacro_path)
         self.robot = getRobotModel(self.robot_name, generate_urdf=True, xacro_path=xacro_path)
         # instantiating objects
-        self.ros_pub = RosPub(self.robot_name, only_visual=True)
+        self.ros_pub = RosPub(node_name, only_visual=True)
 
         self.pub_des_jstate = ros.Publisher("/command", JointState, queue_size=1, tcp_nodelay=True)
         # freeze base  and pause simulation service
@@ -299,33 +297,74 @@ class BaseControllerFixed(threading.Thread):
 
 def talker(p):
     p.start()
-    p.startSimulator()
+    additional_args = 'gui:=false'
+    p.startSimulator(..., additional_args=additional_args)
+    print("--------------------------------------------------------------------")
+    print("simulation started")
+    print("--------------------------------------------------------------------")
+
+    #p.startSimulator()
     if (robotName == 'ur5'):
         p.loadModelAndPublishers(rospkg.RosPack().get_path('ur_description') + '/urdf/' + p.robot_name + '.urdf.xacro')
     else:
         p.loadModelAndPublishers()
     p.initVars()
+    print("--------------------------------------------------------------------")
+    print("models loaded")
+    print("--------------------------------------------------------------------")
     p.startupProcedure()
     ros.sleep(1.0)
     p.q_des_q0 = conf.robot_params[p.robot_name]['q_0']
     # loop frequency
-    rate = ros.Rate(1 / conf.robot_params[p.robot_name]['dt'])
+    #rate = ros.Rate(1 / conf.robot_params[p.robot_name]['dt'])
+    rate = ros.Rate(10)
+    ##setup
+    re2=[]
+    with open("data.txt", 'r') as file:
+        csvreader = csv.reader(file)
+        for row in csvreader:
+            re2.append(row)
+    t=len(re2[0])
+    re = [[0 for i in range(t)] for j in range(len(re2))]
+    for i in range(len(re2)):
+        for j in range(len(re2[0])):
+            re[i][j]=float(re2[i][j])
 
+    max = 300
+    i = 0
+    direction = 1
     # control loop
     while not ros.is_shutdown():
-        p.q_des = np.copy(p.q_des_q0)
-        # send commands to gazebo
-        p.send_des_jstate(p.q_des, p.qd_des, p.tau_ffwd)
+        #p.q_des = np.copy(p.q_des_q0)
+        # send commands to gazeboPublisher(
+        #p.
+        # (p.q_des, p.qd_des, p.tau_ffwd)
+
+        #----------------------------------------
+        ##flag1
+        #print(p)
+        if i >= max - 1 or i <0:
+            direction *= -1
+        i += direction
+
+        print(i)
+        #p.send_des_jstate(np.array(re[i]), p.qd_des, p.tau_ffwd)
+
+
+
+        #--------------------------------------------
         # log variables
         p.logData()
 
-        # wait for syncronization of the control loop
+        # wait for synconization of the control loop
         rate.sleep()
+        tm.sleep(0.5)
         p.time = np.round(p.time + np.array([conf.robot_params[p.robot_name]['dt']]),
-                          3)  # to avoid issues of dt 0.0009999
+                              3)  # to avoid issues of dt 0.0009999
 
 
 if __name__ == '__main__':
+
     p = BaseControllerFixed(robotName)
 
     try:
