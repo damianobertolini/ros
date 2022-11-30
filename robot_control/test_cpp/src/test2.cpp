@@ -1,7 +1,5 @@
 #include "ros/ros.h"
-
 #include "std_msgs/String.h"
-
 
 
 #include <sstream>
@@ -18,7 +16,7 @@ int main(int argc, char ** argv) {
     while (ros::ok()) {
         std_msgs::String msg;
         std::stringstream ss;
-        ss << "hello world " << count;
+        ss << "consgtructing ";
         msg.data = ss.str();
         ROS_INFO("%s", msg.data.c_str());
         chatter_pub.publish(msg);

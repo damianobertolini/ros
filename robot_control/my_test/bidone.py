@@ -237,12 +237,14 @@ for i in range(len(q)):
 """
 
 #incrementi su tutti i joints
-
+"""
 path=[]
 row=[]
 min=-12
 max=12
 bound=(-10,10)
+
+
 
 steps=50
 
@@ -260,16 +262,44 @@ for x in range(6):#6 joints
 
 
 helper.save(path,"path_calibration.txt")
+"""
+
+pos = np.array([0.089159, 0, 0, 0.10915, 0.09465, 0.0823])
+pos = np.array([0.026985191872504866,-0.6681302050626805,-0.3276068811262316,-0.0235015812501439,0.02016366270262715,6.381949412090099e-17])
+#pos = np.array([ 0.32509 ,-0.9816,   0.58257, -0.90407, -0.79274,  0.8    ])
+#pos = np.array([ 0-0.011396809745719522,-0.058403114301534,0.057916919191157046,0.13126164724779377,-0.11657080834973482,2.59011309487694e-17    ])
+
+T_01, T_02, T_03, T_04, T_0e =directKinematic.directKinematics(pos)
+
+print(T_0e)
+
+robot = getRobotModel("ur5")
+kin = robotKinematics(robot, conf.frame_name)
+#p= np.array([0.796818,0.181822,0.0215637])
+p_end_p=T_0e[0:3,3]
+print("end effector position")
+print(p_end_p)
+
+q_ik, _, _ = kin.endeffectorInverseKinematicsLineSearch(p_end_p, conf.frame_name,pos)
+
+robot.computeAllTerms(q_ik, np.zeros(6))
+p_ik = robot.framePlacement(q_ik, robot.model.getFrameId(conf.frame_name)).translation
+task_diff = p_ik - p_end_p
+print("Point obtained with IK solution \n", p_ik)
+print("Error at the end-effector: \n", np.linalg.norm(task_diff))
+print("Final joint positions\n", q_ik)
+
+print("forward of inverse")
+_,_,_,_, T =directKinematic.directKinematics(q_ik)
+print(T[0:3,3])
+
+print("q_ik")
+print(q_ik)
+print("q_start")
+print(pos)
+
 
 print("finito")
-
-
-
-
-
-
-
-
 
 
 
