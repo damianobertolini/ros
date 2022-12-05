@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
+<<<<<<< HEAD
     <list default="true" id="980f821c-7392-4316-b8c5-c48405034448" name="Default Changelist" comment="">
       <change afterPath="$PROJECT_DIR$/../.idea/.gitignore" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
@@ -12,6 +13,13 @@
       <change beforePath="$PROJECT_DIR$/../test_cpp/package.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../test_cpp/src/test1.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../test_cpp/src/test2.cpp" beforeDir="false" />
+=======
+    <list default="true" id="4d85fce4-5725-4234-8b76-976c5e8f7609" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../a.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+>>>>>>> 97d4363fa650605cd68f3b7dc5d7786ad7d9764f
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,7 +29,11 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
+<<<<<<< HEAD
   <component name="ProjectId" id="2HsEiqGrwhe0NJLOUXfZ62xXTRg" />
+=======
+  <component name="ProjectId" id="2IEKF6eGN80zOTosKPPkL6AVJDn" />
+>>>>>>> 97d4363fa650605cd68f3b7dc5d7786ad7d9764f
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -31,6 +43,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+<<<<<<< HEAD
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RunManager" selected="Python.my_test">
@@ -118,6 +131,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+=======
+  </component>
+  <component name="RunManager">
+>>>>>>> 97d4363fa650605cd68f3b7dc5d7786ad7d9764f
     <configuration name="ur5_generic" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="robot_control" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -143,20 +160,23 @@
       <list>
         <item itemvalue="Python.my_test" />
         <item itemvalue="Python.ur5_generic" />
+<<<<<<< HEAD
         <item itemvalue="Python.base_controller_fixed" />
         <item itemvalue="Python.my_test3" />
         <item itemvalue="Python.base_controller" />
+=======
+>>>>>>> 97d4363fa650605cd68f3b7dc5d7786ad7d9764f
       </list>
     </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="980f821c-7392-4316-b8c5-c48405034448" name="Default Changelist" comment="" />
-      <created>1669065520314</created>
+      <changelist id="4d85fce4-5725-4234-8b76-976c5e8f7609" name="Default Changelist" comment="" />
+      <created>1669741196876</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1669065520314</updated>
+      <updated>1669741196876</updated>
     </task>
     <servers />
   </component>

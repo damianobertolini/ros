@@ -1,3 +1,4 @@
+#include <pinocchio/fwd.hpp>
 #include "ros/ros.h"
 
 #include "std_msgs/String.h"
@@ -6,8 +7,12 @@
 #include <Eigen/Dense>
 //#include <eigen3/Eigen/Eigen>
 #include <sstream>
-
+#include "Helper.cpp"
+#include "Kin.cpp"
 #include "robot.cpp"
+
+
+
 
 
 using namespace std;
@@ -43,11 +48,22 @@ void js_callback(const sensor_msgs::JointState& joint){
 void start_chatter(int argc, char ** argv){
     ros::init(argc, argv, "main_cpp");
     ros::NodeHandle n;
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(5);
     ros::Publisher chatter_pub = n.advertise < std_msgs::String > ("chatter", 1000);
 	
 
     int count = 0;
+
+    cout << "testing pinocchio..." << endl;
+
+    
+
+    Kin kin;
+    kin.test_pinocchio();
+    kin.test_pinocchio2();
+    kin.test_pinocchio3();
+
+    cout << "pass" << endl;
     
     while (ros::ok()) {
         
@@ -88,12 +104,12 @@ void call_robot(int argc, char ** argv){
     cout << "done spinning " << endl;
     */
 
-    Robot r;
+    Robot r(true);
     r.start_callback(argc, argv);
 }
 
 int main(int argc, char ** argv) {
-	
+	Helper h;
     thread robot_thread(call_robot, argc,argv); //fa partire la classe robot in un thread così può fare spin all'infinito
     thread chatter_thread(start_chatter, argc,argv);
     cout << "inizio" << endl;
@@ -106,15 +122,17 @@ int main(int argc, char ** argv) {
     //sub = n.subscribe("/ur5/joint_states", 1, js_callback);
     ros::Subscriber sub = n.subscribe("chatter", 10, msg_callback);
     */
-    Robot r;
+    
     int i=0;
     while(ros::ok){
         cout << "waiting: " << i << endl;
         sleep(1);
-        cout << "joints: " << Robot::joint.position << endl;
+        cout << "joints: ";
+        Robot::print_position(Robot::joint);
     }
 
     cout << "fine" << endl;
     
     return 0;
 }
+

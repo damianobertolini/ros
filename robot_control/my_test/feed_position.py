@@ -1,54 +1,59 @@
-import rospy as ros
-from std_msgs.msg import String
-from sensor_msgs.msg import JointState
+#common stuff
+from __future__ import print_function
+import time as tm
+import numpy as np
+import numpy as nan
+import math
+import matplotlib.pyplot as plt
+import csv
 import helper
-from base_controllers.components.inverse_kinematics.inv_kinematics_pinocchio import robotKinematics
-import base_controllers.utils.kin_dyn_utils as directKinematic
+
 from base_controllers.utils.common_functions import *
+from base_controllers.utils.ros_publish import RosPub
+from base_controllers.components.inverse_kinematics.inv_kinematics_pinocchio import robotKinematics
 import L1_conf as conf
-import numpy
+import matplotlib.pyplot as plt
+
+os.system("killall rosmaster rviz")
+#instantiate graphic utils
+ros_pub = RosPub("ur5")
+robot = getRobotModel("ur5")
+kin = robotKinematics(robot, conf.frame_name)
+
+##############################
+##exercise 2.6 : postural task
+###############################
+## desired task space position
+p = np.array([0.5, -0.2, 0.5])
+p = np.array([0,0,0])
+# initial guess
+q_i = np.array([0.0, -0.0, 0.0, 0.0, 0., 0.0])
+
+# postural elbow down
+q_postural = np.array([0.0, 0.8, -0.8, -0.8, -0.8, 0.0])
+# postural elbow up
+#q_postural = np.array([0.0, -1.8, 1.8, -0.8, -0.8, 0.0])
+
+q_ik, _, _ = kin.endeffectorInverseKinematicsLineSearch(p, conf.frame_name,
+                                                        q_i,
+                                                        verbose = True,
+                                                        use_error_as_termination_criteria = False,
+                                                        postural_task = True,
+                                                        w_postural = 0.0001,
+                                                        q_postural = q_postural)
+print("Desired End effector \n", p)
+
+robot.computeAllTerms(q_ik, np.zeros(6))
+p_ik = robot.framePlacement(q_ik, robot.model.getFrameId(conf.frame_name)).translation
+task_diff = p_ik - p
+print("Point obtained with IK solution \n", p_ik)
+print("Error at the end-effector: \n", np.linalg.norm(task_diff))
+print("Final joint positions\n", q_ik)
 
 
-class driver:
-
-    def send_des_jstate(publisher, q_des, qd_des=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        tau_ffwd=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]):
-        # No need to change the convention because in the HW interface we use our conventtion (see ros_impedance_contoller_xx.yaml)
-        msg = JointState()
-        msg.position = q_des
-        msg.velocity = qd_des
-        msg.effort = tau_ffwd
-        publisher.publish(msg)
-        # print("published: ")
-        # print(msg)
-
-    def q_to_p(self, p):
-        q_i = np.array([0.0, -0.0, 0.0, 0.0, 0., 0.0])
-        q_ik, _, _ = self.kin.endeffectorInverseKinematicsLineSearch(p, conf.frame_name, verbose=True, )
-        return q_ik
 
 
-def talker(d):
-    pub = ros.Publisher('command', JointState, queue_size=1)
-    ros.init_node('talker', anonymous=False)
-    rate = ros.Rate(20)  # 10hz
-    ros.sleep(1)
 
-    q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    q[0]=0.6
-    driver.send_des_jstate(pub, q)
-    print("pubblicato")
-    """
-    while not ros.is_shutdown():
-    
-        
 
-        rate.sleep()
-    """
 
-if __name__ == '__main__':
-    try:
-        d = driver()
-        talker(d)
-    except ros.ROSInterruptException:
-        pass
+

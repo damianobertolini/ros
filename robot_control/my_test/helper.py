@@ -33,7 +33,9 @@ def sin_square(q_i,q_f,steps):
     q_f = numpy.asarray(q_f)
     diff = q_f - q_i
     for i in range(steps):
-        path.append(q_i+ (math.sin((math.pi/2)*i/steps)**2)*diff)
+        path.append(
+            q_i+ (math.sin((math.pi/2)*i/steps)**2)*diff
+                    )
     return path
 
 def get_initial_pos():

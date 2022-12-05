@@ -28,7 +28,15 @@ class Robot{
         static inline int stat=0;
         static inline bool started = false;
     
-        Robot(){};
+        Robot(){
+            //vuoto
+        };
+
+        Robot(bool init){//da chiamare una volta per non avere errori
+            if(init){
+                joint.position={0.0,0.0,0.0,0.0,0.0,0.0};
+            }
+        };
 
         Robot(int argc, char ** argv){
             cout << "in robot" << endl;
@@ -88,6 +96,25 @@ class Robot{
         string get_msg(){
             return msg.data;
         }
+        static int print_position(sensor_msgs::JointState j){
+            
+            //Robot r;
+            //cout << j << endl;
+
+            if(!Robot::started){
+                cout << "nessun messaggio joint" << endl;
+                return -1;
+            }
+
+            //cout << "printing joints" << endl;
+
+            for(int i=0;    i< 6;i++){
+                cout << "posizione " << i << ": " << j.position[i] << endl;
+            }
+            //cout << "done printing" << endl;
+            cout << "--------------------------------------------------" << endl << endl;
+            return 1;
+        };
 };
 
 //std_msgs::String Robot::msg = new std_msgs::String();
@@ -129,5 +156,5 @@ void js_callback(const sensor_msgs::JointState& j){
 	//js=joint;
     */
     Robot::joint = j;
-    Robot::start = true;
+    Robot::started = true;
 }
