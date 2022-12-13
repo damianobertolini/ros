@@ -31,14 +31,28 @@ def process_image():
 
             coordinate = [cs, x1, y1, x2, y2, conf, xc, yc]
 
-            print(str(coordinate))
+            #print(str(coordinate))
 
             eps = 10
             crop_img = image[int(y1) - eps:int(y2) + eps, int(x1) - eps:int(x2) + eps]
 
             name = str(int(cs)) + "_cropped.jpg"
             cv2.imwrite(name, crop_img)
-            
+
+            # new part, read cropped image, find contours (draw rectangle) and draw center point
+            boundings, center = canny_img(name)
+
+            print(f"center coord for image {name}: ", end="")
+            print(center)
+
+            real_coord_x = int(x1) - eps + center[0]
+            real_coord_y = int(y1) - eps + center[1]
+
+            image = cv2.circle(image, (real_coord_x, real_coord_y), radius=1, color=(255, 255, 255), thickness=5)
+
+            # return to original image sizes (find real coordinates of found centre)
+
+        cv2.imwrite("final.jpg", image)
 
         print("finito")
 
@@ -49,9 +63,9 @@ def process_image():
 # crea bounding box rettangolare NON ruotata attorno a contorno del blocco (usa canny per trovare edges) e trova quindi min_x min_y ecc del contorno
 # poi trova anche il punto centrale e disegna un cerchio in quel punto
 # salva tutto in edge.jpg
-def canny_img():
+def canny_img(img_name):
     # img = cv2.imread("untitled2.jpg", cv2.IMREAD_GRAYSCALE)
-    template = cv2.imread('prova.jpg', cv2.IMREAD_GRAYSCALE)
+    template = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
 
     edges = cv2.Canny(template, 50, 150)
 
@@ -66,20 +80,19 @@ def canny_img():
     min_x = min([val[1] for val in arr])
     max_x = max([val[1] for val in arr])
 
-    print("min and max values: ", end="")
-    print(min_y, max_y, min_x, max_x)
+    #print("min and max values: ", end="")
+    #print(min_y, max_y, min_x, max_x)
 
     cv2.rectangle(edges, (min_x, min_y), (max_x, max_y), (255, 255, 255), 2)
 
     # find and draw center
-    edges = drawCenter((min_x, min_y, max_x, max_y), edges)
+    edges, center = drawCenter((min_x, min_y, max_x, max_y), edges)
 
     cv2.imwrite("edgeWithCenter.jpg", edges)
 
+    #print("done")
 
-    print("done")
-
-    return min_x, min_y, max_x, max_y
+    return (min_x, min_y, max_x, max_y), center
 
 
 def drawCenter(coordinates, image):
@@ -88,8 +101,8 @@ def drawCenter(coordinates, image):
 
     image = cv2.circle(image, (xc, yc), radius=2, color=(255, 255, 255), thickness=10)
 
-    print(xc, yc, coordinates)
-    return image
+    #print(xc, yc, coordinates)
+    return image, (xc, yc)
 
 
 # trova minimo rettangolo che ingloba il contorno trovato con canny e lo salva  in minRect.jpg, utile anche per rotazioni sull'asse z
@@ -114,6 +127,6 @@ def minAreaRect():
 
 
 if __name__ == '__main__':
-    #process_image()
-    canny_img()
+    process_image()
+    #canny_img("prova.jpg")
     #minAreaRect()
