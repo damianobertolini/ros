@@ -132,7 +132,7 @@ def getRobotModel(robot_name="hyq", generate_urdf = False, xacro_path = None):
             except:
                 pass
 
-            
+
             os.system("rosrun xacro xacro "+args)  
             #os.system("rosparam get /robot_description > "+os.environ['LOCOSIM_DIR']+'/robot_urdf/'+robot_name+'.urdf')  
             #urdf = URDF.from_parameter_server()
@@ -147,7 +147,11 @@ def getRobotModel(robot_name="hyq", generate_urdf = False, xacro_path = None):
 
         urdf      = path + "/robot_urdf/" + robot_name+ ".urdf"
         robot = RobotWrapper.BuildFromURDF(urdf, [path,srdf ])
-    
+
+    robot = RobotWrapper.BuildFromURDF(urdf, [path, srdf])
+    print("quiurdfciAO")
+    print(robot)
+
     return robot                    
 
 def plotJoint(name, figure_id, time_log, q_log=None, q_des_log=None, qd_log=None, qd_des_log=None, qdd_log=None, qdd_des_log=None, tau_log=None, tau_ffwd_log = None, tau_des_log = None, joint_names = None, q_adm = None):

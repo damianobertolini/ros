@@ -53,18 +53,18 @@ safety_k_position="$(arg safety_k_position)"/>
 	  <!-- realsense -->
 	  <!--These values are taken from  d435_camera.urdf.xacro and  d435_camera_openni.gazebo.urdf.xacro in sensors-description
 	 repo, commit 3fb6f787-->
-	  <xacro:property name="camera_fov" value="3.0"/>
-	  <xacro:property name="camera_width" value="640"/> 
-	  <xacro:property name="camera_height" value="480"/>
+	  <xacro:property name="camera_fov" value="1.0"/>
+	  <xacro:property name="camera_width" value="1920"/> 
+	  <xacro:property name="camera_height" value="1080"/>
 	  <xacro:property name="camera_near" value="0.1"/>
 	  <xacro:property name="camera_far" value="100"/>    
 	  <xacro:property name="m_camera" value="0.07"/> <!--??-->
 
 	<xacro:d435_camera 
-		parent="wrist_3_link" 
+		parent="base_link" 
 		name="ee_camera"
 		camera_plugin="true">  
-		<origin xyz="0.05 0.0 -0.02" rpy="0 -1.57 0.0"/>
+		<origin xyz="-1.0 0.0 -0.4" rpy="0.0 0.5 0.0"/>
 	</xacro:d435_camera>
 
 	  <xacro:property name="camera_fov" value="3.0"/>
@@ -74,10 +74,10 @@ safety_k_position="$(arg safety_k_position)"/>
 	  <xacro:property name="camera_far" value="100"/> 
 
 	<xacro:d435_camera 
-		parent="base_link" 
+		parent="base_link"
 		name="z_base_camera"
 		camera_plugin="true">  
-		<origin xyz="0.0 -0.3 -0.5" rpy="0.0  0.5 1.57"/>
+		<origin xyz="5.0 0.1 0.6" rpy="0.0  0.5 1.57"/>
 	</xacro:d435_camera>
 
 

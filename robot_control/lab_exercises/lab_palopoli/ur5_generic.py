@@ -69,8 +69,8 @@ class Ur5Generic(BaseControllerFixed):
         self.gm = GripperManager(self.real_robot, conf.robot_params[self.robot_name]['dt'])
 
         #self.world_name = None # only the workbench
-        self.world_name = 'empty.world'
-        #self.world_name = 'palopoli.world'
+        #self.world_name = 'empty.world'
+        self.world_name = 'tavolo.world'
 
         print("Initialized ur5 generic  controller---------------------------------------------------------------")
 
@@ -314,6 +314,8 @@ if __name__ == '__main__':
 
     p = Ur5Generic(robotName)
 
+    print("quiqui" + rospkg.RosPack().get_path('ur_description') + '/urdf/' + p.robot_name + '.urdf.xacro')
+
     try:
         talker(p)
     except (ros.ROSInterruptException, ros.service.ServiceException):
@@ -321,6 +323,7 @@ if __name__ == '__main__':
         p.deregister_node()
         if   conf.plotting:
             p.plotStuff()
+
 
     
         
