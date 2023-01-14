@@ -1,0 +1,1 @@
+python3 detect.py --weights ./best.pt --img 640 --conf 0.1 --source ../datasets/lego/test/images
