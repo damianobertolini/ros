@@ -1,6 +1,9 @@
+import time
+
 import cv2
 import torch
 import numpy as np
+import math
 
 from imutils import contours as imcontours
 
@@ -13,7 +16,7 @@ def process_image():
         model = torch.hub.load("../", 'custom', path="../best.pt", source='local')
 
         image = cv2.imread(
-            "/Users/damiano/Desktop/UNIVERSITA'/TERZO ANNO TRENTO/ROBOTICA/copia di repo github/ros/datasets/lego/test/images/untitled2.jpg",
+            "/Users/damiano/Desktop/UNIVERSITA'/TERZO ANNO TRENTO/ROBOTICA/copia di repo github/ros/yolov5/detect_primo/prove/18.jpg",
             cv2.IMREAD_COLOR)
 
         print("scrivo su topic")
@@ -40,16 +43,19 @@ def process_image():
             crop_img = image[int(y1) - eps:int(y2) + eps, int(x1) - eps:int(x2) + eps]
 
             name = str(int(cs)) + "_cropped.jpg"
-            cv2.imwrite(name, crop_img)
+            cv2.imwrite("prove/" + name, crop_img)
+            time.sleep(3)
 
             # new part, read cropped image, find contours (draw rectangle) and draw center point
-            boundings, center = canny_img(name)
+            canny_img(int(cs), 3)
+
+            center = min_area_rect(int(cs))
 
             print(f"center coord for image {name}: ", end="")
             print(center)
 
-            real_coord_x = int(x1) - eps + center[0]
-            real_coord_y = int(y1) - eps + center[1]
+            real_coord_x = int(int(x1) - eps + center[0])
+            real_coord_y = int(int(y1) - eps + center[1])
 
             image = cv2.circle(image, (real_coord_x, real_coord_y), radius=1, color=(255, 255, 255), thickness=5)
 
@@ -66,11 +72,11 @@ def process_image():
 # crea bounding box rettangolare NON ruotata attorno a contorno del blocco (usa canny per trovare edges) e trova quindi min_x min_y ecc del contorno
 # poi trova anche il punto centrale e disegna un cerchio in quel punto
 # salva tutto in edge.jpg
-def canny_img(img_number):
+def canny_img(img_number, aperture_size):
     # img = cv2.imread("untitled2.jpg", cv2.IMREAD_GRAYSCALE)
     template = cv2.imread(f'{img_number}_cropped.jpg', cv2.IMREAD_GRAYSCALE)
 
-    edges = cv2.Canny(template, 50, 150, apertureSize=3, L2gradient=True)
+    edges = cv2.Canny(template, 50, 150, apertureSize=aperture_size, L2gradient=True)
 
     cv2.imwrite(f'{img_number}_cannied.jpg', edges)
 
@@ -135,8 +141,8 @@ def min_area_rect(img_number):
     assert len(contours) >= 1
     cnt = contours[-1]
 
-    min_area_rect = cv2.minAreaRect(cnt)
-    tmp2 = cv2.boxPoints(min_area_rect)
+    min_area_rectangle = cv2.minAreaRect(cnt)
+    tmp2 = cv2.boxPoints(min_area_rectangle)
 
     box = np.int0(tmp2)
 
@@ -146,10 +152,10 @@ def min_area_rect(img_number):
 
     cv2.imwrite(f'{img_number}_minRect.jpg', img)
 
-    min_area_rect_angle = min_area_rect[2]
+    min_area_rect_angle = min_area_rectangle[2]
 
-    min_area_rect_width = min_area_rect[1][0]
-    min_area_rect_height = min_area_rect[1][1]
+    min_area_rect_width = min_area_rectangle[1][0]
+    min_area_rect_height = min_area_rectangle[1][1]
 
     print(img_number, " : ", min_area_rect_angle, min_area_rect_width, min_area_rect_height)
 
@@ -160,8 +166,10 @@ def min_area_rect(img_number):
 
     # print(min_area_rect_angle)
 
+    return min_area_rectangle[0]
 
-def experimental_detect(img_number):
+
+def experimental_detect(img_number, img_centre):
     img = cv2.imread(f'{img_number}_cannied.jpg', 0)
 
     img = cv2.GaussianBlur(img, (7, 7), sigmaX=1.5, sigmaY=1.5)
@@ -169,6 +177,10 @@ def experimental_detect(img_number):
     cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     try:
+        max_rad_circle = max(15, int(math.ceil(max(img.shape) / 4 / 2)))
+        #print(max_rad_circle, img.shape)
+
+
         circles = cv2.HoughCircles(
             img,
             cv2.HOUGH_GRADIENT,
@@ -177,12 +189,15 @@ def experimental_detect(img_number):
             param1=50,
             param2=15,
             minRadius=5,
-            maxRadius=15,
+            maxRadius=max_rad_circle,
         )
 
         circles = np.uint16(np.around(circles))
 
-        print(circles)
+        incl = get_inclination(circles, img_centre, img.shape)
+
+        print(incl)
+
         for i in circles[0, :]:
             # draw the outer circle
             cv2.circle(cimg, (i[0], i[1]), i[2], (0, 255, 0), 2)
@@ -198,17 +213,80 @@ def experimental_detect(img_number):
         cv2.waitKey(0)
     except Exception as e:
         print(e)
-        print('non va')
+
+        canny_img(img_number, 5)
+        experimental_detect(img_number, img_centre)
 
 
-def get_inclination():
-    pass
+def get_inclination(circles, img_centre, image_shape):
+    x_cr = 0
+    y_cr = 0
 
+    for circle in circles[0]:
+        x_cr += circle[0]
+        y_cr += circle[1]
+
+    x_cr /= len(circles[0])
+    y_cr /= len(circles[0])
+
+    diff_x = abs(img_centre[0] - x_cr)
+    diff_y = abs(img_centre[1] - y_cr)
+
+    inclination = []
+
+
+    if diff_x > diff_y:
+        if x_cr < img_centre[0]:
+            inclination.append("left")
+        else:
+            inclination.append("right")
+
+        if y_cr < img_centre[1]:
+            inclination.append("top")
+        else:
+            inclination.append("bottom")
+    else:
+        if y_cr < img_centre[1]:
+            inclination.append("top")
+        else:
+            inclination.append("bottom")
+
+        if x_cr < img_centre[0]:
+            inclination.append("left")
+        else:
+            inclination.append("right")
+
+    return inclination
+
+
+    # if diff_x >= (image_shape[1] / 7):
+    #     if img_centre[0] - x_cr > 0:
+    #         inclination.append("left")
+    #     else:
+    #         inclination.append("right")
+    #
+    # if diff_y >= (image_shape[0] / 7):
+    #     if img_centre[1] - y_cr > 0:
+    #         inclination.append("top")
+    #     else:
+    #         inclination.append("bottom")
+
+    # if inclination == "":
+    #     return "None"
+    # else:
+    #     return inclination
 
 if __name__ == '__main__':
-    # process_image()
-    for i in [0, 2, 6, 7, 8]:
-        canny_img(i)
-        min_area_rect(i)
-        # altro_detect("8_cropped.jpg", "cannied.jpg")
-        experimental_detect(i)
+    #process_image()
+    for i in range(30):
+        try:
+            canny_img(i, 3)
+            # posso mettere in houghcircles 16 invece di 15 e mettere aperturesize 5 e blur a 13 (ad es anche 15 ...)
+            centre = min_area_rect(i)
+            experimental_detect(i, centre)
+
+            print("\n")
+        except:
+            from termcolor import colored
+            pass
+            #print(colored("number not present", 'red'))
