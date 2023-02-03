@@ -37,60 +37,88 @@
 
     
     <link name="trunk">
-        <!-- TODO the trunk (it will be fixed to base link but it has inertia) -->
-		<inertial>
-		  <origin xyz="0.0 0.0 0.0"/>
-		  <mass value="15" />
-		  <inertia  ixx="0.001" ixy="0.0"  ixz="0.0"  iyy="0.001"  iyz="0.0"  izz="0.001" />
-	       </inertial>
-	      <visual>
-		<origin xyz="0 0.0 0.0" rpy="0 0 0"/>
-		<geometry>
-		    <box size="0.1 0.1 0.1"/>
-		</geometry>
-	      </visual>
-	     <collision>
-		<origin  xyz="0 0.0 0.0 " rpy="0 0 0"/>
-		<geometry>
-		    <box size="0.1 0.1 0.1"/>
-		</geometry>
-	     </collision>
+        <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="10.0"/>
+        <inertia ixx="0.16574" ixy="0" ixz="0" iyy="0.16574" iyz="0" izz="0.24057"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+           <mesh filename="package://starbot_description/meshes/stl/octagon.stl"/>
+        </geometry>
+        <material name="yellow">
+        	<color rgba="0.8 0.6 0.0 1.0"/>
+        </material>
+      </visual>
+      <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://starbot_description/meshes/stl/octagon.stl"/>
+            </geometry>
+        </collision>
+     
 
     </link>
 
-
-    <!-- TODO Include the legs (add parameters if necessary)-->
+    <!-- if we imagine to place a line between the two positive direction of axis x and y -->
+    <!-- 
+      
+      legs are align with axis x and y as shown below 
+      
+          is right?
+             |
+     y       |        x
+       o     |     o
+    	o    |    o
+    	 o___|___o
+    	 |   |   |
+  _______|___|___|_________ is front?
+         |   |   |
+    	 |___|___|
+    	 o   |   o
+    	o    |    o
+       o     |     o 
+    -x       |       -y
     
-    <!-- LEFT FRONT LEG -->
+    
+    -->
+    
+    
+    <!-- LEFT FRONT LEG = leg align with axis y -->
      <xacro:leg
     	name="lf"
-    	parent="base_link"
+    	parent="trunk"
+    	is_front="true"
+    	is_right="false"
     	robot_name="$(arg robot_name)">
-    	<origin xyz="0.1 0.1 0.0" rpy="0 0 0"/>
     </xacro:leg>
 
-    <!-- RIGHT FRONT LEG -->
+    <!-- RIGHT FRONT LEG = leg align with axis x -->
     <xacro:leg
     	name="rf"
-    	parent="base_link"
+    	parent="trunk"
+    	is_front="true"
+    	is_right="true"
     	robot_name="$(arg robot_name)">
-    	<origin xyz="0.1 -0.1 0.0" rpy="0 0 0"/>
     </xacro:leg>
 
-    <!-- LEFT HIND LEG -->
+    <!-- LEFT HIND LEG = leg align with axis neg x -->
      <xacro:leg
     	name="lh"
-    	parent="base_link"
+    	parent="trunk"
+    	is_front="false"
+    	is_right="false"
     	robot_name="$(arg robot_name)">
-    	<origin xyz="-0.1 0.1 0.0" rpy="0 0 0"/>
     </xacro:leg>
 
-    <!-- RIGHT HIND LEG -->
+    <!-- RIGHT HIND LEG = leg align with axis neg y -->
     <xacro:leg
     	name="rh"
-    	parent="base_link"
+    	parent="trunk"
+    	is_front="false"
+    	is_right="true"
     	robot_name="$(arg robot_name)">
-    	<origin xyz="-0.1 -0.1 0.0" rpy="0 0 0"/>
     </xacro:leg>
 
 

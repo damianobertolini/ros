@@ -30,7 +30,7 @@ robot_params['solo'] ={'dt': 0.002,
                        'ee_frames': ['lf_foot', 'rf_foot', 'lh_foot','rh_foot'],
                        'real_robot': False,
                        'force_th': 2,
-                       'spawn_x': 0.25,
+                       'spawn_x': 0.0,
                        'spawn_y': 0.0,
                        'spawn_z': 0.3,
                         'buffer_size': 1501} # note the frames are all aligned with base for joints = 0
@@ -69,10 +69,14 @@ robot_params['aliengo'] ={'dt': 0.002,
                           'spawn_z': 0.5,
                           'buffer_size': 30001} # note the frames are all aligned with base for joints = 0
 robot_params['go1'] ={'dt': 0.002,
-                        'kp': 20.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
-                        'kd': 1.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
-                        'kp_real': 20.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
-                        'kd_real': 0.3*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
+                       'kp': 15.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
+                       'kd': 1.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
+                       'kp_real': 20.*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
+                       'kd_real': 0.3*np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1]),
+                       'Kp_lin': np.array([200., 200., 200.]), # x y z
+                       'Kd_lin': np.array([200., 200., 200.]),
+                       'Kp_ang': np.array([200., 200., 200.]), # R P Y
+                       'Kd_ang': np.array([1., 1., 1.]),
                         'q_0':  np.array([0.2, 0.78, -1.7, -0.20, 0.78, -1.7, 0.20, 0.78, -1.7, -0.20, 0.78, -1.7]),
                         #'q_fold': np.array([0.6, 1.7, -2.77, 0.6, 1.7, -2.77, -0.6, 1.52, -2.77, -0.6, 1.52, -2.77]),
                         'q_fold': np.array([0.2, 1.7, -2.7, 0.2, 1.7, -2.7, -0.2, 1.7, -2.7, -0.2, 1.7, -2.7]),
@@ -82,10 +86,11 @@ robot_params['go1'] ={'dt': 0.002,
                         'ee_frames': ['lf_foot', 'rf_foot', 'lh_foot','rh_foot'],
                         'real_robot': False,
                         'force_th': 7.,
-                          'spawn_x': 0.0,#0.3,
-                          'spawn_y': 0.0,
-                          'spawn_z': .2,
-                          'buffer_size': 30001} # note the frames are all aligned with base for joints = 0
+                        'spawn_x': 0.0,#0.3,
+                        'spawn_y': 0.0,
+                        'spawn_z': .08,
+                        'buffer_size': 30001} # note the frames are all aligned with base for joints = 0
+
 robot_params['ur5'] ={'dt': 0.001, 
                        'kp': np.array([300, 300, 300,30,30,1]),
                        'kd':  np.array([20,20,20,5, 5,0.5]),
@@ -96,11 +101,11 @@ robot_params['ur5'] ={'dt': 0.001,
                        'control_mode': 'point', # 'trajectory','point'
                        'real_robot': False,
                        'control_type': 'torque', # 'position', 'torque'
-                       'gripper_sim': False,
+                       'gripper_sim': True,
                        'spawn_x' : 0.5,
                        'spawn_y' : 0.35,
                        'spawn_z' : 1.75,
-                       'buffer_size': 6000} # note the frames are all aligned with base for joints = 0
+                       'buffer_size': 50000} # note the frames are all aligned with base for joints = 0
 
 robot_params['jumpleg'] ={'dt': 0.001,
                        'kp': np.array([100, 100, 100, 10, 10, 10 ]),
@@ -126,7 +131,36 @@ robot_params['climbingrobot'] ={'dt': 0.001,
                        'spawn_y' : 0.0,
                        'spawn_z' : 20.0, 
                        'buffer_size': 10000} # note the frames are all aligned with base for joints = 0
-                         
+
+robot_params['starbot'] ={'dt': 0.001,
+                       'kp': 50.*np.array([10. ,   10.,    10.,  10. ,
+                       			10. ,   10.,    10.,  10. ,
+                                10. ,   10.,    10.,  10. ,
+                                10. ,   10.,    10.,  10. ,
+                       			10. ,   10.,    10.,  10.]),
+                       'kd':   1.0*np.array([1.,    1.,    1.,   1. ,
+                       			1.,    1.,    1.,   1. ,
+                                1.,    1.,    1.,   1. ,
+                                1.,    1.,    1.,   1. ,
+                       			1.,    1.,    1.,   1. ]),
+
+                       'q_0':  np.array([ -0.6, 0.6, 0.6, -0.6,
+                       			0., 0., 0., 0.0,
+                                0.1, 0.1, 0.1, 0.1,
+                                0., 0., 0., 0.0,
+                                0., 0., 0., 0.0 ]),
+                       'joint_names': ['lf_bs_joint', 'rf_bs_joint',  'lh_bs_joint', 'rh_bs_joint',
+                       			'lf_upper_leg_joint', 'rf_upper_leg_joint',  'lh_upper_leg_joint', 'rh_upper_leg_joint',
+                       			'lf_lower_leg_joint', 'rf_lower_leg_joint',  'lh_lower_leg_joint', 'rh_lower_leg_joint',
+                                'lf_pre_wheel_joint', 'rf_pre_wheel_joint',  'lh_pre_wheel_joint', 'rh_pre_wheel_joint',
+                                'lf_wheel_joint', 'rf_wheel_joint',  'lh_wheel_joint', 'rh_wheel_joint'],
+                       'ee_frames': ['lf_wheel','lh_wheel','rf_wheel','rh_wheel'],
+                       'force_th': 5.,
+                       'spawn_x' : 0.0,
+                       'spawn_y' : 0.0,
+                       'spawn_z' : 1.0,
+                       'buffer_size': 10000} # note the frames are all aligned with base for joints = 0
+
 verbose = False
 plotting = True
 

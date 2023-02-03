@@ -15,6 +15,7 @@ from base_controllers.base_controller import BaseController
 from base_controllers.utils.math_tools import *
 
 from base_controllers.components.inverse_kinematics.inv_kinematics_quadruped import InverseKinematics
+from base_controllers.components.leg_odometry.leg_odometry import LegOdometry
 from termcolor import colored
 
 import base_controllers.params as conf
@@ -30,7 +31,6 @@ from sensor_msgs.msg import Imu
 from base_controllers.components.imu_utils import IMU_utils
 
 
-import rosbag
 import datetime
 
 class Controller(BaseController):
@@ -38,12 +38,6 @@ class Controller(BaseController):
         super(Controller, self).__init__(robot_name, launch_file)
         self.qj_0 = conf.robot_params[self.robot_name]['q_0']
         self.dt = conf.robot_params[self.robot_name]['dt']
-
-
-        now = datetime.datetime.now()
-        date_string = now.strftime("%Y%m%d%H%M")
-
-        self.sensors_bag = rosbag.Bag(os.environ['PYSOLO_FROSCIA'] + '/bags/' + date_string + '.bag', 'w')
 
         self.ee_frames = conf.robot_params[self.robot_name]['ee_frames']
 
@@ -61,6 +55,8 @@ class Controller(BaseController):
         if self.real_robot:
             self.sub_imu_lin_acc = ros.Subscriber("/" + self.robot_name + "/trunk_imu", Vector3,
                                                  callback=self._recieve_imu_acc_real, queue_size=1, tcp_nodelay=True)
+            self.sub_imu_euler = ros.Subscriber("/" + self.robot_name + "/euler_imu", Vector3,
+                                                 callback=self._recieve_euler, queue_size=1, tcp_nodelay=True)
         else:
             self.sub_imu_lin_acc = ros.Subscriber("/" + self.robot_name + "/trunk_imu", Imu,
                                                   callback=self._recieve_imu_acc, queue_size=1, tcp_nodelay=True)
@@ -79,14 +75,18 @@ class Controller(BaseController):
 
         self.W_base_lin_acc = self.b_R_w.T @ (self.B_imu_lin_acc - self.imu_utils.IMU_accelerometer_bias) - self.imu_utils.g0
 
+    def _recieve_euler(self, msg):
+        self.euler[0] = msg.x
+        self.euler[1] = msg.y
+        self.euler[2] = msg.z
+
+
 
     def _receive_pose(self, msg):
-
         self.quaternion[0] = msg.pose.pose.orientation.x
         self.quaternion[1] = msg.pose.pose.orientation.y
         self.quaternion[2] = msg.pose.pose.orientation.z
         self.quaternion[3] = msg.pose.pose.orientation.w
-        self.euler = euler_from_quaternion(self.quaternion)
 
         if self.real_robot:
             self.basePoseW[self.u.sp_crd["LX"]] = self.w_p_b_legOdom[0]
@@ -96,6 +96,9 @@ class Controller(BaseController):
             self.basePoseW[self.u.sp_crd["LX"]] = msg.pose.pose.position.x
             self.basePoseW[self.u.sp_crd["LY"]] = msg.pose.pose.position.y
             self.basePoseW[self.u.sp_crd["LZ"]] = msg.pose.pose.position.z
+
+            self.euler = np.array(euler_from_quaternion(self.quaternion))
+
         self.basePoseW[self.u.sp_crd["AX"]] = self.euler[0]
         self.basePoseW[self.u.sp_crd["AY"]] = self.euler[1]
         self.basePoseW[self.u.sp_crd["AZ"]] = self.euler[2]
@@ -119,13 +122,34 @@ class Controller(BaseController):
 
         # compute orientation matrix
         self.b_R_w = self.math_utils.rpyToRot(self.euler)
-
         self.broadcaster.sendTransform(self.u.linPart(self.basePoseW),
                                        self.quaternion,
                                        ros.Time.now(), '/base_link', '/world')
 
+
+
     def initVars(self):
         super().initVars()
+        self.q_des = self.u.mapToRos(conf.robot_params[self.robot_name]['q_fold'])
+        self.IK = InverseKinematics(self.robot)
+        self.leg_odom = LegOdometry(self.robot)
+        self.legConfig = {}
+        if 'solo' in self.robot_name:  # either solo or solo_fw
+            self.legConfig['lf'] = ['HipDown', 'KneeInward']
+            self.legConfig['lh'] = ['HipDown', 'KneeInward']
+            self.legConfig['rf'] = ['HipDown', 'KneeInward']
+            self.legConfig['rh'] = ['HipDown', 'KneeInward']
+
+        elif self.robot_name == 'aliengo' or self.robot_name == 'go1':
+            self.legConfig['lf'] = ['HipDown', 'KneeInward']
+            self.legConfig['lh'] = ['HipDown', 'KneeOutward']
+            self.legConfig['rf'] = ['HipDown', 'KneeInward']
+            self.legConfig['rh'] = ['HipDown', 'KneeOutward']
+
+        else:
+            assert False, 'Robot name is not valid'
+
+        self.euler = np.zeros(3)
         # some extra variables
         self.gen_config_neutral = pin.neutral(self.robot.model)
         self.qPin_base_oriented = pin.neutral(self.robot.model)
@@ -138,11 +162,11 @@ class Controller(BaseController):
         self.basePoseW_des = np.zeros(6) * np.nan
         self.baseTwistW_des = np.zeros(6) * np.nan
 
-        self.comPosW = np.zeros(6) * np.nan
-        self.comVelW = np.zeros(6) * np.nan
+        # self.comPoseW = np.zeros(6) * np.nan
+        # self.comTwistW = np.zeros(6) * np.nan
 
-        self.comPosW_des = np.zeros(6) * np.nan
-        self.comVelW_des = np.zeros(6) * np.nan
+        self.comPoseW_des = np.zeros(6) * np.nan
+        self.comTwistW_des = np.zeros(6) * np.nan
 
         self.comPosB = np.zeros(3) * np.nan
         self.comVelB = np.zeros(3) * np.nan
@@ -163,8 +187,20 @@ class Controller(BaseController):
         self.grForcesB_ffwd = np.empty(3 * self.robot.nee) * np.nan
         self.grForcesB_ddp = np.empty(3 * self.robot.nee) * np.nan
 
+        # virtual impedance wrench control
+        self.Kp_lin = np.diag(conf.robot_params[self.robot_name].get('Kp_lin', np.zeros(3)))
+        self.Kd_lin = np.diag(conf.robot_params[self.robot_name].get('Kd_lin', np.zeros(3)))
 
-        self.grForcesLocal_gt_tmp = np.zeros(3)
+        self.Kp_ang = np.diag(conf.robot_params[self.robot_name].get('Kp_ang', np.zeros(3)))
+        self.Kd_ang = np.diag(conf.robot_params[self.robot_name].get('Kd_ang', np.zeros(3)))
+
+        self.wrench_fbW  = np.zeros(6)
+        self.wrench_ffW  = np.zeros(6)
+        self.wrench_gW   = np.zeros(6)
+        self.wrench_gW[self.u.sp_crd["LZ"]] = self.robot.robotMass * self.g_mag
+        self.wrench_desW = np.zeros(6)
+
+        self.NEMatrix = np.zeros([6, 3*self.robot.nee]) # Newton-Euler matrix
 
         try:
             self.force_th = conf.robot_params[self.robot_name]['force_th']
@@ -179,10 +215,10 @@ class Controller(BaseController):
         self.comPosB_log = np.empty((3, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
         self.comVelB_log = np.empty((3, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
 
-        self.comPosW_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
-        self.comVelW_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
-        self.comPosW_des_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
-        self.comVelW_des_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
+        self.comPoseW_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
+        self.comTwistW_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
+        self.comPoseW_des_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
+        self.comTwistW_des_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
 
         self.comVelW_leg_odom = np.empty((3)) * np.nan
         self.comVelW_leg_odom_log = np.empty((3, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
@@ -219,8 +255,8 @@ class Controller(BaseController):
         self.qdd_log = np.empty((self.robot.na, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
         self.qdd = np.zeros(self.robot.na)
 
-        self.base_acc_W_log = np.empty((6, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
-        self.base_acc_W = np.zeros(6)
+        self.W_base_lin_acc_log = np.empty((3, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
+        self.W_base_lin_acc = np.zeros(3)
 
         self.C_qd_log = np.empty((self.robot.nv, conf.robot_params[self.robot_name]['buffer_size'])) * np.nan
         self.C_qd = np.zeros(self.robot.nv)
@@ -297,10 +333,10 @@ class Controller(BaseController):
         # Fill with new values
         self.comPosB_log[:, self.log_counter] = self.comB
         self.comVelB_log[:, self.log_counter] = self.comVelB
-        self.comPosW_log[:, self.log_counter] = self.comPoseW
-        self.comVelW_log[:, self.log_counter] = self.comTwistW
-        self.comPosW_des_log[:, self.log_counter] = self.comPosW_des
-        self.comVelW_des_log[:, self.log_counter] = self.comVelW_des
+        self.comPoseW_log[:, self.log_counter] = self.comPoseW
+        self.comTwistW_log[:, self.log_counter] = self.comTwistW
+        self.comPoseW_des_log[:, self.log_counter] = self.comPoseW_des
+        self.comTwistW_des_log[:, self.log_counter] = self.comTwistW_des
         self.basePoseW_log[:, self.log_counter] = self.basePoseW
         self.baseTwistW_log[:, self.log_counter] = self.baseTwistW
         self.basePoseW_des_log[:, self.log_counter] = self.basePoseW_des
@@ -324,7 +360,7 @@ class Controller(BaseController):
         self.contact_state_log[:, self.log_counter] = self.contact_state
         self.tau_minus_h_log[:, self.log_counter] = self.tau_minus_h
         self.qdd_log[:, self.log_counter] = self.qdd
-        self.base_acc_W_log[:, self.log_counter] = self.base_acc_W
+        self.W_base_lin_acc_log[:, self.log_counter] = self.W_base_lin_acc
         self.C_qd_log[:, self.log_counter] = self.C_qd
         self.T_p_com_ref_lc_log[:, self.log_counter] = self.T_p_com_ref_lc
         self.T_p_base_leg_odom_lc_log[:, self.log_counter] = self.T_p_base_leg_odom_lc
@@ -347,7 +383,7 @@ class Controller(BaseController):
         self.time_log[:, self.log_counter] = self.time
 
 
-    def startController(self, world_name=None, xacro_path=None, use_ground_truth_contacts=True):
+    def startController(self, world_name=None, xacro_path=None, use_ground_truth_contacts=True, additional_args=None):
 
         if self.real_robot == False:
             self.use_ground_truth_contacts = use_ground_truth_contacts
@@ -355,7 +391,20 @@ class Controller(BaseController):
             self.use_ground_truth_contacts = False
 
         self.start()                               # as a thread
-        self.startSimulator(world_name)            # run gazebo
+        self.startSimulator(world_name, additional_args)            # run gazebo
+        if world_name is None:
+            self.world_name_str = ''
+        else:
+            self.world_name_str = world_name
+        if 'camera' in self.world_name_str:
+            # check if some old jpg are still in /tmp
+            print('#files /tmp/camera_save/default_camera_link_my_camera*: ')
+            n_files = os.system('ls /tmp/camera_save/ | grep "default_camera_link_my_camera*" | wc -l')
+            if n_files != 0:
+                remove_jpg_cmd = "rm /tmp/camera_save/default_camera_link_my_camera*.jpg"
+                os.system(remove_jpg_cmd)
+                print(colored('Jpg files removed', 'blue'), flush=True)
+
         self.loadModelAndPublishers(xacro_path)    # load robot and all the publishers
         #self.resetGravity(True)
         self.initVars()                            # overloaded method
@@ -381,17 +430,18 @@ class Controller(BaseController):
     def gravityCompensation(self):
         # require the call to updateKinematics
         # to simplyfy, all the feet are assumed to be in contact
-        contact_torques = np.zeros(self.robot.na)
-        for leg in range(4):
-            S = pin.skew(self.B_contacts[leg] - self.comB )
-            self.contact_matrix[3:, 3 * leg:3 * (leg + 1)] = S
-        C_pinv = np.linalg.pinv(self.contact_matrix)
-        self.gravityB[0:3] = self.b_R_w @ self.gravityW[0:3]
-        self.grForcesW_des = C_pinv @ self.gravityB
-        for leg in range(4):
-            tau_leg  = -self.J[leg].T  @ self.u.getLegJointState(leg, self.grForcesW_des)
-            self.u.setLegJointState(leg, tau_leg, contact_torques)
-        return contact_torques
+        # contact_torques = np.zeros(self.robot.na)
+        # for leg in range(4):
+        #     S = pin.skew(self.B_contacts[leg] - self.comB )
+        #     self.contact_matrix[3:, 3 * leg:3 * (leg + 1)] = S
+        # C_pinv = np.linalg.pinv(self.contact_matrix)
+        # self.gravityB[0:3] = self.b_R_w @ self.gravityW[0:3]
+        # self.grForcesW_des = C_pinv @ self.gravityB
+        # for leg in range(4):
+        #     tau_leg  = -self.J[leg].T  @ self.u.getLegJointState(leg, self.grForcesW_des)
+        #     self.u.setLegJointState(leg, tau_leg, contact_torques)
+        # return contact_torques
+        return self.projectionWBC(des_pose = None, des_twist = None, des_acc = None, comControlled = True)
 
     # TODO: To be tested
     # def gravityCompensation(self, legsInContact):
@@ -425,6 +475,97 @@ class Controller(BaseController):
     #     J = self.robot.getEEStackJacobians(fb_config, 'linear')[:, 6:]
     #     contact_torques = -self.u.mapToRos(J.T @ feet_forces_gravity)
     #     return contact_torques
+
+
+    def virtualImpedanceWrench(self, des_pose, des_twist, des_acc = None, comControlled = True):
+        if not(des_pose is None or des_twist is None):
+            if comControlled:
+                act_pose = self.comPoseW
+                act_twist = self.comTwistW
+            else:
+                act_pose = self.basePoseW
+                act_twist = self.baseTwistW
+            # FEEDBACK WRENCH
+            # ---> linear part
+            self.wrench_fbW[self.u.sp_crd["LX"]:self.u.sp_crd["LZ"]+1] = self.Kp_lin @ (self.u.linPart(des_pose)  - self.u.linPart(act_pose)) + \
+                                                                       self.Kd_lin @ (self.u.linPart(des_twist) - self.u.linPart(act_twist))
+            # ---> angular part
+            # actual orientation: self.b_R_w
+            # Desired Orientation
+            b_Rdes_w = self.math_utils.rpyToRot(self.u.angPart(des_pose))
+
+            # compute orientation error
+            b_Re_w = b_Rdes_w @ self.b_R_w.T
+            # express orientation error in angle-axis form
+            b_err = rotMatToRotVec(b_Re_w)
+
+            # the orientation error is expressed in the base_frame so it should be rotated to have the wrench in the
+            # world frame
+            w_err = self.b_R_w.T @ b_err
+            # map des euler rates into des omega
+            Jomega = self.math_utils.Tomega(self.u.angPart(self.comPoseW))
+
+            # Note we defined the angular part of the des twist as euler rates not as omega so we need to map them to an
+            # Euclidean space with Jomegaself.u.sp_crd["AX"]:self.u.sp_crd["AZ"]+1
+            self.wrench_fbW[self.u.sp_crd["AX"]:self.u.sp_crd["AZ"]+1] = self.Kp_ang @ w_err + \
+                                                                       self.Kd_ang @ ( Jomega @ (self.u.angPart(des_twist) - self.u.angPart(act_twist)))
+
+            # FEED-FORWARD WRENCH
+            if not (des_acc is None):
+                # ---> linear part
+                self.wrench_ffW[self.u.sp_crd["LX"]:self.u.sp_crd["LZ"] + 1] = self.robot.robotMass * self.u.linPart(
+                    des_acc)
+                # ---> angular part
+                # compute inertia in the world frame:  w_I = R' * B_I * R
+                w_I = self.b_R_w.T @ self.centroidalInertiaB @ self.b_R_w
+                # compute w_des_omega_dot =  Jomega*des euler_rates_dot + Jomega_dot*des euler_rates (Jomega already computed, see above)
+                Jomega_dot = self.math_utils.Tomega_dot(self.u.angPart(self.comPoseW), self.u.angPart(self.comTwistW))
+                w_des_omega_dot = Jomega @ self.u.angPart(des_acc) + Jomega_dot @ self.u.angPart(des_twist)
+                self.wrench_ffW[self.u.sp_crd["AX"]:self.u.sp_crd["AZ"] + 1] = w_I @ w_des_omega_dot
+
+        # GRAVITY WRENCH
+        # ---> linear part
+        # self.wrench_gW[self.u.sp_crd["LZ"]+1] = self.robot.robotMass * self.g_mag (to avoid unuseful repetition, this is in the definiton of wrench_gW)
+        # ---> angular part
+        if not comControlled:  # act_state  = base position in this case
+            W_base_to_com = self.u.linPart(self.comPoseW) - self.u.linPart(self.basePoseW)
+            self.wrench_gW[self.u.sp_crd["AX"]:self.u.sp_crd["AZ"]+1] = np.cross(W_base_to_com, self.wrench_gW[self.u.sp_crd["LX"]:self.u.sp_crd["LZ"]+1])
+        # else the angular wrench is zero
+
+
+    # Whole body controller that includes ffd wrench + fb Wrench (Virtual PD) + gravity compensation
+    # all vector is in the wf
+    def projectionWBC(self, des_pose, des_twist, des_acc = None, comControlled = True):
+        self.virtualImpedanceWrench(des_pose, des_twist, des_acc, comControlled)
+        self.wrench_desW = self.wrench_fbW + self.wrench_gW + self.wrench_ffW
+
+        # clean the matrix
+        self.NEMatrix[:,:] = 0.
+        # wrench = NEMatrix @ grfs
+        for leg in range(self.robot.nee):
+            if self.contact_state[leg]:
+                start_col = 3 * leg
+                end_col = 3 * (leg+1)
+                # ---> linear part
+                # identity matrix (I avoid to rewrite zeros)
+                self.NEMatrix[self.u.sp_crd["LX"], start_col] = 1.
+                self.NEMatrix[self.u.sp_crd["LY"], start_col + 1] = 1.
+                self.NEMatrix[self.u.sp_crd["LZ"], start_col + 2] = 1.
+                # ---> angular part
+                # all in a function
+                self.NEMatrix[self.u.sp_crd["AX"]:self.u.sp_crd["AZ"]+1, start_col:end_col] = \
+                    pin.skew(self.W_contacts[leg] - self.u.linPart(self.comPoseW))
+
+        # Map the desired wrench to grf
+        self.grForcesW_des = np.linalg.pinv(self.NEMatrix, 1e-06) @ self.wrench_desW
+        WBC_torques = np.empty(12)
+        for leg in range(4):
+            tau_leg  = self.u.getLegJointState(leg, self.h_joints) - \
+                       self.wJ[leg].T  @ self.u.getLegJointState(leg, self.grForcesW_des)
+            self.u.setLegJointState(leg, tau_leg, WBC_torques)
+        return WBC_torques
+
+
 
     def comFeedforward(self, a_com):
         self.qPin_base_oriented[3:7] = self.quaternion
@@ -519,7 +660,6 @@ class Controller(BaseController):
 
 
     def visualizeContacts(self):
-        return
         for legid in self.u.leg_map.keys():
 
             leg = self.u.leg_map[legid]
@@ -531,7 +671,7 @@ class Controller(BaseController):
             else:
                 self.ros_pub.add_arrow(self.W_contacts[leg],
                                        np.zeros(3),
-                                       "green", scale=0)
+                                       "green", scale=0.0001)
                 #self.ros_pub.add_marker(self.W_contacts[leg], radius=0.001)
 
             if (self.use_ground_truth_contacts):
@@ -588,11 +728,14 @@ class Controller(BaseController):
         #     if input('press ENTER to continue/any key to STOP') != '':
         #         exit(0)
         # the robot must start in fold configuration
-        self.q_des = self.u.mapToRos(conf.robot_params[self.robot_name]['q_fold'])
+        if self.real_robot:
+            self.q_des = self.q.copy()
+        else:
+            self.q_des = self.u.mapToRos(conf.robot_params[self.robot_name]['q_fold'])
         self.pid = PidManager(self.joint_names)
         if self.real_robot:
-            self.pid.setPDjoints(conf.robot_params[self.robot_name]['kp_real']/2,
-                                 conf.robot_params[self.robot_name]['kd_real']/2,
+            self.pid.setPDjoints(conf.robot_params[self.robot_name]['kp_real'],
+                                 conf.robot_params[self.robot_name]['kd_real'],
                                  np.zeros(self.robot.na))
         else:
             self.pid.setPDjoints(conf.robot_params[self.robot_name]['kp'],
@@ -603,10 +746,6 @@ class Controller(BaseController):
             self.send_des_jstate(self.q_des, self.qd_des, self.tau_ffwd)
             ros.sleep(0.01)
 
-        if self.real_robot:
-            self.pid.setPDjoints(conf.robot_params[self.robot_name]['kp_real'],
-                                 conf.robot_params[self.robot_name]['kd_real'],
-                                 np.zeros(self.robot.na))
 
         # try:
         #     while not ros.is_shutdown():
@@ -620,6 +759,14 @@ class Controller(BaseController):
         # finally:
         #     sys.exit(-1)
 
+        # IMU BIAS ESTIMATION
+        if self.real_robot and self.robot_name == 'go1':
+            # print('counter: ' + self.imu_utils.counter + ', timeout: ' + self.imu_utils.timeout)
+            while self.imu_utils.counter < self.imu_utils.timeout:
+                self.updateKinematics()
+                self.imu_utils.IMU_bias_estimation(self.b_R_w, self.B_imu_lin_acc)
+                self.tau_ffwd[:] = 0.
+                self.send_command(self.q_des, self.qd_des, self.tau_ffwd)
 
 
         if check_contacts:
@@ -641,33 +788,11 @@ class Controller(BaseController):
                 ros.signal_shutdown("killed")
                 self.deregister_node()
 
-        # IMU BIAS ESTIMATION
-        while self.imu_utils.counter < self.imu_utils.timeout:
-            self.updateKinematics()
-            self.imu_utils.IMU_bias_estimation(self.b_R_w, self.B_imu_lin_acc)
-            self.send_command(self.q_des, self.qd_des, self.gravityCompensation()+self.self_weightCompensation())
+
 
 
 
     def _startupWithContacts(self):
-        # IK initialization
-        IK = InverseKinematics(self.robot)
-        legConfig = {}
-        if 'solo' in self.robot_name:  # either solo or solo_fw
-            legConfig['lf'] = ['HipDown', 'KneeInward']
-            legConfig['lh'] = ['HipDown', 'KneeInward']
-            legConfig['rf'] = ['HipDown', 'KneeInward']
-            legConfig['rh'] = ['HipDown', 'KneeInward']
-
-        elif self.robot_name == 'aliengo' or self.robot_name == 'go1':
-            legConfig['lf'] = ['HipDown', 'KneeInward']
-            legConfig['lh'] = ['HipDown', 'KneeOutward']
-            legConfig['rf'] = ['HipDown', 'KneeInward']
-            legConfig['rh'] = ['HipDown', 'KneeOutward']
-
-        else:
-            assert False, 'Robot name is not valid'
-
         # initial feet position
         B_feet_pose = [np.zeros(3)] * 4
         neutral_fb_jointstate = np.hstack((pin.neutral(self.robot.model)[0:7], self.u.mapToRos(self.q)))#conf.robot_params[self.robot_name]['q_fold']))
@@ -723,7 +848,7 @@ class Controller(BaseController):
                                 foot_id = self.robot.model.getFrameId(foot)
                                 leg_name = foot[:2]
                                 B_feet_pose[leg][2] -= delta_z
-                                q_des_leg = IK.ik_leg(B_feet_pose[leg], foot_id, legConfig[leg_name][0],legConfig[leg_name][1])[0].flatten()
+                                q_des_leg = self.IK.ik_leg(self.b_R_w.T@B_feet_pose[leg], foot_id,self. legConfig[leg_name][0],self. legConfig[leg_name][1])[0].flatten()
                                 self.u.setLegJointState(leg, q_des_leg, self.q_des)
                         # if self.log_counter != 0:
                         #     self.qd_des = (self.q_des - self.q_des_log[:, self.log_counter]) / self.dt
@@ -764,7 +889,7 @@ class Controller(BaseController):
                             B_feet_pose[leg][2] -= delta_z
                             if current_robot_height <= robot_height:
                                 B_foot = B_feet_pose[leg] # self.b_R_w.T @ b_R_w_init @ B_feet_pose[leg]
-                                q_des_leg = IK.ik_leg(B_foot, foot_id, legConfig[leg_name][0], legConfig[leg_name][1])[0].flatten()
+                                q_des_leg = self.IK.ik_leg(self.b_R_w.T@B_foot, foot_id,self. legConfig[leg_name][0],self. legConfig[leg_name][1])[0].flatten()
                                 self.u.setLegJointState(leg, q_des_leg, self.q_des)
 
                         self.tau_ffwd = self.gravityCompensation() + self.self_weightCompensation()
@@ -775,12 +900,18 @@ class Controller(BaseController):
                         WTime = self.time
 
                 if state == 3:
-                    if (self.time - WTime) <= 0.5:
+                    #if (self.time - WTime) <= 0.5:
 
-                        self.tau_ffwd = self.gravityCompensation() + self.self_weightCompensation()
-                    else:
+                    if all(np.abs(self.qd) < 0.025) and (self.time - WTime) >0.5:
                         print(colored("[startupProcedure] completed", "green"))
                         state = 4
+                    else:
+                        # enter
+                        # if any of the joint position errors is larger than 0.02 or
+                        # if any of the joint velocities is larger than 0.02 or
+                        # if the watchdog timer is not expired (1 sec)
+                        self.tau_ffwd = self.gravityCompensation() + self.self_weightCompensation()
+
 
                 self.send_command(self.q_des, self.qd_des, self.tau_ffwd)
 
@@ -802,6 +933,55 @@ class Controller(BaseController):
         savemat(filename, DATA)
 
         print('Reference saved in', filename)
+
+
+    def save_video(self, path, filename='record', format='mkv',  fps=60, speedUpDown=1, remove_jpg=True):
+        # only if camera_xxx.world has been used
+        # for details on commands, check https://ffmpeg.org/ffmpeg.html
+        if 'camera' not in self.world_name_str:
+            print(colored('Cannot create a video of a not camera world (world_name:'+self.world_name_str+')', 'red'), flush=True)
+            return
+        #
+        # # kill gazebo
+        # os.system("killall rosmaster rviz gzserver gzclient")
+
+        if '.' in filename:
+            filename=filename[:, filename.find('.')]
+        if path[-1] != '/':
+            path+='/'
+        videoname = path + filename + '.' + format
+        save_video_cmd = "ffmpeg -hide_banner -loglevel error -r "+str(fps)+" -pattern_type glob -i '/tmp/camera_save/default_camera_link_my_camera*.jpg' -c:v libx264 "+videoname
+        ret = os.system(save_video_cmd)
+        saved = ''
+        if ret == 0:
+            saved = ' saved'
+        else:
+            saved = ' did not saved'
+        print(colored('Video '+videoname+saved, color='green'), flush=True)
+
+
+        if speedUpDown <= 0:
+            print(colored('speedUpDown must be greather than 0.0','red'))
+        else:
+            if speedUpDown != 1:
+                pts_multiplier = int(1 / speedUpDown)
+                videoname_speedUpDown = path + filename + str(speedUpDown).replace('.', '')+'x.'+format
+                speedUpDown_cmd = "ffmpeg -hide_banner -loglevel error -i "+videoname+" -filter:v 'setpts="+str(pts_multiplier)+"*PTS' "+videoname_speedUpDown
+                ret = os.system(speedUpDown_cmd)
+                saved = ''
+                if ret == 0:
+                    saved= ' saved'
+                else:
+                    saved = ' did not saved'
+                print(colored('Video ' + videoname_speedUpDown+saved, color='green'), flush=True)
+
+        if remove_jpg:
+            remove_jpg_cmd = "rm /tmp/camera_save/default_camera_link_my_camera*.jpg"
+            os.system(remove_jpg_cmd)
+            print(colored('Jpg files removed', color='green'), flush=True)
+
+
+
 
 
 

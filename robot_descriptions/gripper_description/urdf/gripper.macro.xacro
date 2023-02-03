@@ -90,6 +90,8 @@
 		 <origin xyz="${-0.03*sin_PI_3} ${0.03*cos_PI_3} 0.05" rpy="${-PI/2} 0 ${-2*PI/3}"/>
 	</xacro:finger>
 
+	<!-- the plugin for grasping that creates a dynamic link with the object when grasping forces are sent is described here:-->
+	<!-- https://github-wiki-see.page/m/JenniferBuehler/gazebo-pkgs/wiki/The-Gazebo-grasp-fix-plugin-->
 	<xacro:if value="${grasp_plugin}">
 		<gazebo>
 		   <plugin name="gazebo_grasp_fix" filename="libgazebo_grasp_fix.so">

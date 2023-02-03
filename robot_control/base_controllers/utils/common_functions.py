@@ -132,7 +132,7 @@ def getRobotModel(robot_name="hyq", generate_urdf = False, xacro_path = None):
             except:
                 pass
 
-
+            
             os.system("rosrun xacro xacro "+args)  
             #os.system("rosparam get /robot_description > "+os.environ['LOCOSIM_DIR']+'/robot_urdf/'+robot_name+'.urdf')  
             #urdf = URDF.from_parameter_server()
@@ -147,11 +147,7 @@ def getRobotModel(robot_name="hyq", generate_urdf = False, xacro_path = None):
 
         urdf      = path + "/robot_urdf/" + robot_name+ ".urdf"
         robot = RobotWrapper.BuildFromURDF(urdf, [path,srdf ])
-
-    robot = RobotWrapper.BuildFromURDF(urdf, [path, srdf])
-    print("quiurdfciAO")
-    print(robot)
-
+    
     return robot                    
 
 def plotJoint(name, figure_id, time_log, q_log=None, q_des_log=None, qd_log=None, qd_des_log=None, qdd_log=None, qdd_des_log=None, tau_log=None, tau_ffwd_log = None, tau_des_log = None, joint_names = None, q_adm = None):
@@ -227,6 +223,7 @@ def plotJoint(name, figure_id, time_log, q_log=None, q_des_log=None, qd_log=None
         if (q_adm is not None):
             plt.plot(time_log, q_adm[jidx, :], linestyle='-', marker="o", markersize=marker_size, lw=lw_act, color='black')
         plt.grid()
+    return fig
                 
     
 
@@ -326,10 +323,9 @@ def plotCoM(name, figure_id, time_log, des_basePoseW=None, basePoseW=None, des_b
     plt.subplot(3, 2, 3)
     plt.ylabel("CoM Y")
     plt.plot(time_log, plot_var_log[1, :], linestyle='-', marker="o", markersize=marker_size, lw=lw_act,
-            color='blue',
-            label="q")
+            color='blue')
     if (plot_var_des_log is not None):
-       plt.plot(time_log, plot_var_des_log[1, :], linestyle='-', lw=lw_des, color='red', label="q_des")
+       plt.plot(time_log, plot_var_des_log[1, :], linestyle='-', lw=lw_des, color='red')
     plt.legend(bbox_to_anchor=(-0.01, 1.115, 1.01, 0.115), loc=3, mode="expand")
     plt.grid()
 
@@ -364,6 +360,7 @@ def plotCoM(name, figure_id, time_log, des_basePoseW=None, basePoseW=None, des_b
     if (plot_var_des_log is not None):
        plt.plot(time_log, plot_var_des_log[5, :], linestyle='-', lw=lw_des, color='red')
     plt.grid()
+    return fig
 
 
 
@@ -710,6 +707,36 @@ def plotGRFs_withContacts(figure_id, time_log, des_forces, act_forces, contact_s
     plt.plot(time_log, coeff * contact_states[3, :], linestyle='-', lw=lw_act/2, color='black')
     plt.grid()
     # plt.ylim((0,450))
+
+
+def plotFeet(figure_id, time_log, des_feet=None, act_feet=None, contact_states=None):
+    # %% Input plots
+
+    fig = plt.figure(figure_id)
+    fig.suptitle("Feet", fontsize=20)
+
+    legs = ['LF', 'RF', 'LH', 'RH']
+    axes = ['x', 'y', 'z']
+
+    positions = [1, 3, 5, 2, 4, 6, 7, 9, 11, 8, 10, 12]
+
+    for l in range(4):
+        for a in range(3):
+            i = 3*l+a
+            plt.subplot(6, 2, positions[3*l+a])
+            plt.ylabel("$"+legs[l]+"_"+axes[a]+"$", fontsize=10)
+            if des_feet is not None:
+                plt.plot(time_log, des_feet[i, :], linestyle='-', lw=lw_des, color='red')
+            if act_feet is not None:
+                plt.plot(time_log, act_feet[i, :], linestyle='-', lw=lw_act, color='blue')
+            if des_feet is not None and act_feet is not None and contact_states is not None:
+                coeff =  max(np.nanmax(des_feet[i, :]), np.nanmax(act_feet[0, :]))
+                plt.plot(time_log, coeff*contact_states[l, :], linestyle='-', lw=lw_act/2, color='black')
+            plt.grid()
+    # plt.ylim((-100,100))
+    return fig
+
+
 
 def plotConstraitViolation(figure_id,constr_viol_log):
     fig = plt.figure(figure_id)            

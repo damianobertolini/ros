@@ -6,6 +6,8 @@
 <xacro:arg name="vision_sensor" default="true"/>
 <xacro:arg name="gazebo" default="true"/>
 <xacro:arg name="gripper" default="false"/>
+<xacro:arg name="soft_gripper" default="false" />
+
 <xacro:arg name="prefix" default=""/>
 <xacro:arg name="transmission_hw_interface" default="hardware_interface/EffortJointInterface"/>
 
@@ -33,52 +35,75 @@ safety_limits="$(arg safety_limits)"
 safety_pos_margin="$(arg safety_pos_margin)"
 safety_k_position="$(arg safety_k_position)"/>
      
-
-<xacro:include filename="$(find gripper_description)/urdf/gripper.macro.xacro" />
-<xacro:gripper 
+	
+<xacro:if value="$(arg soft_gripper)">
+	<xacro:include filename="$(find gripper_description)/urdf/soft_gripper.macro.xacro" />
+	<xacro:soft_gripper 
 	transmission_hw_interface="$(arg transmission_hw_interface)"			
 	grasp_plugin="$(arg gripper)"			
-	gripper_active="$(arg gripper)">
-</xacro:gripper>
+	gripper_active="$(arg gripper)"/>
+</xacro:if>
+
+<xacro:unless value="$(arg soft_gripper)">
+	<xacro:include filename="$(find gripper_description)/urdf/gripper.macro.xacro" />
+	<xacro:gripper 
+		transmission_hw_interface="$(arg transmission_hw_interface)"			
+		grasp_plugin="$(arg gripper)"			
+		gripper_active="$(arg gripper)"/>
+</xacro:unless>
+
 
 <joint name="gripper_robot_joint" type="fixed">
         <parent link="tool0_without_gripper"/>
         <child link="gripper_base"/>
-        <origin xyz="0 0 0" rpy="0 0 3.14"/>
+        <origin xyz="0 0 0" rpy="0 0 1.57"/>
 </joint>
 
 <xacro:if value="$(arg vision_sensor)">
-	<xacro:include filename="$(find ur_description)/sensors/d435_camera.urdf.xacro"/>
 
-	  <!-- realsense -->
-	  <!--These values are taken from  d435_camera.urdf.xacro and  d435_camera_openni.gazebo.urdf.xacro in sensors-description
-	 repo, commit 3fb6f787-->
-	  <xacro:property name="camera_fov" value="1.0"/>
-	  <xacro:property name="camera_width" value="1920"/> 
-	  <xacro:property name="camera_height" value="1080"/>
-	  <xacro:property name="camera_near" value="0.1"/>
-	  <xacro:property name="camera_far" value="100"/>    
-	  <xacro:property name="m_camera" value="0.07"/> <!--??-->
+	<xacro:if value="$(arg gazebo)">
+		<xacro:include filename="$(find ur_description)/sensors/zed2/simulation/zed2.xacro"/>
+		<xacro:zed2
+			parent="base_link"
+			name="zed_camera1">
+			<origin xyz="-0.9 0.18 -0.35" rpy="0. 0.523 0."/>
+		</xacro:zed2>
+		<xacro:zed2_gazebo/>
+  	</xacro:if>
+		
+<!--	<xacro:include filename="$(find ur_description)/sensors/d435_camera.urdf.xacro"/>-->
 
-	<xacro:d435_camera 
-		parent="base_link" 
-		name="ee_camera"
-		camera_plugin="true">  
-		<origin xyz="-1.0 0.0 -0.4" rpy="0.0 0.5 0.0"/>
-	</xacro:d435_camera>
+<!--	  &lt;!&ndash; realsense &ndash;&gt;-->
+<!--	  &lt;!&ndash;These values are taken from  d435_camera.urdf.xacro and  d435_camera_openni.gazebo.urdf.xacro in sensors-description-->
+<!--	 repo, commit 3fb6f787&ndash;&gt;-->
+<!--	  <xacro:property name="camera_fov" value="3.0"/>-->
+<!--	  <xacro:property name="camera_width" value="640"/> -->
+<!--	  <xacro:property name="camera_height" value="480"/>-->
+<!--	  <xacro:property name="camera_near" value="0.1"/>-->
+<!--	  <xacro:property name="camera_far" value="100"/>    -->
+<!--	  <xacro:property name="m_camera" value="0.07"/> &lt;!&ndash;??&ndash;&gt;-->
 
-	  <xacro:property name="camera_fov" value="3.0"/>
-	  <xacro:property name="camera_width" value="640"/> 
-	  <xacro:property name="camera_height" value="480"/>
-	  <xacro:property name="camera_near" value="0.01"/>
-	  <xacro:property name="camera_far" value="100"/> 
+<!--	<xacro:d435_camera -->
+<!--		parent="wrist_3_link" -->
+<!--		name="ee_camera"-->
+<!--		camera_plugin="true">  -->
+<!--		<origin xyz="0.05 0.0 -0.02" rpy="0 -1.57 0.0"/>-->
+<!--	</xacro:d435_camera>-->
 
-	<xacro:d435_camera 
-		parent="base_link"
-		name="z_base_camera"
-		camera_plugin="true">  
-		<origin xyz="5.0 0.1 0.6" rpy="0.0  0.5 1.57"/>
-	</xacro:d435_camera>
+<!--	  -->
+<!--	  -->
+<!--	  <xacro:property name="camera_fov" value="3.0"/>-->
+<!--	  <xacro:property name="camera_width" value="640"/> -->
+<!--	  <xacro:property name="camera_height" value="480"/>-->
+<!--	  <xacro:property name="camera_near" value="0.01"/>-->
+<!--	  <xacro:property name="camera_far" value="100"/> -->
+
+<!--	<xacro:d435_camera -->
+<!--		parent="base_link" -->
+<!--		name="z_base_camera"-->
+<!--		camera_plugin="true">  -->
+<!--		<origin xyz="0.0 -0.3 -0.5" rpy="0.0  0.5 1.57"/>-->
+<!--	</xacro:d435_camera>-->
 
 
 </xacro:if>

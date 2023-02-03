@@ -151,7 +151,7 @@ class BaseController(threading.Thread):
             print(colored("Setting custom model: "+str(world_name), "blue"))
             cli_args.append('world_name:=' + str(world_name))
         if additional_args is not None:
-            cli_args.append(additional_args)
+            cli_args.extend(additional_args)
         roslaunch_args = cli_args[1:]
         roslaunch_file = [(roslaunch.rlutil.resolve_launch_arguments(cli_args)[0], roslaunch_args)]
         parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
@@ -260,7 +260,6 @@ class BaseController(threading.Thread):
         self.broadcaster.sendTransform(self.u.linPart(self.basePoseW),
                                        self.quaternion,
                                        ros.Time.now(), '/base_link', '/world')
-
     def _receive_jstate(self, msg):
         for msg_idx in range(len(msg.name)):
             for joint_idx in range(len(self.joint_names)):
@@ -383,6 +382,7 @@ class BaseController(threading.Thread):
                 self.w_R_lowerleg[leg] = self.b_R_w.transpose().dot(self.robot.data.oMf[self.lowerleg_index[leg]].rotation)
 
         for leg in range(4):
+            # TODO fix for different number of joint per leg
             leg_joints =  range(6+self.u.mapIndexToRos(leg)*3, 6+self.u.mapIndexToRos(leg)*3+3) 
             self.J[leg] = self.robot.frameJacobian(neutral_fb_jointstate,  self.robot.model.getFrameId(ee_frames[leg]), pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:3,leg_joints]  
             self.wJ[leg] = self.b_R_w.transpose().dot(self.J[leg])
@@ -404,8 +404,9 @@ class BaseController(threading.Thread):
         self.comPoseW[self.u.sp_crd["LX"]:self.u.sp_crd["LX"]+3] = self.robot.robotComW(configuration) # + np.array([0.05, 0.0,0.0])
         W_base_to_com = self.u.linPart(self.comPoseW)  - self.u.linPart(self.basePoseW) 
         self.comTwistW = np.dot( motionVectorTransform( W_base_to_com, np.eye(3)),self.baseTwistW)
-        
+        # inertia w.r.t the com
         self.centroidalInertiaB = self.robot.centroidalInertiaB(configuration, gen_velocities)
+        # inertia w.r.t the base frame origin
         self.compositeRobotInertiaB = self.robot.compositeRobotInertiaB(configuration)
 
     def estimateContactForces(self):           
@@ -455,7 +456,7 @@ class BaseController(threading.Thread):
                     [24.2571, 1.92, 50.5, 24.2, 1.92, 50.5739, 21.3801, -2.08377, -44.9598, 21.3858, -2.08365, -44.9615])
                                                         
                 print("reset posture...")
-                self.freezeBase(1)
+                self.freezeBase(1, basePoseW=np.hstack( (self.base_offset, np.array([0.,0.,0.]))) )
                 start_t = ros.get_time()
                 while ros.get_time() - start_t < 1.0:
                     self.send_des_jstate(self.q_des, self.qd_des, self.tau_ffwd)
@@ -498,6 +499,7 @@ class BaseController(threading.Thread):
         self.q = np.zeros(self.robot.na)
         self.qd = np.zeros(self.robot.na)
         self.tau = np.zeros(self.robot.na)
+        self.tau_fb = np.zeros(self.robot.na)
         self.q_des = np.zeros(self.robot.na)
         self.quaternion = np.array([0., 0., 0., 1.])
         self.q_des = conf.robot_params[self.robot_name]['q_0']

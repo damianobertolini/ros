@@ -8,11 +8,8 @@ Created on 3 May  2022
 from __future__ import print_function
 
 import os
-
-import numpy as np
 import rospy as ros
 import sys
-
 # messages for topic subscribers
 from geometry_msgs.msg import WrenchStamped
 from std_srvs.srv import Trigger, TriggerRequest
@@ -33,7 +30,6 @@ import  params as conf
 robotName = "ur5"
 
 # controller manager management
-
 from controller_manager_msgs.srv import SwitchControllerRequest, SwitchController
 from controller_manager_msgs.srv import LoadControllerRequest, LoadController
 from std_msgs.msg import Float64MultiArray
@@ -41,12 +37,13 @@ from base_controllers.base_controller_fixed import BaseControllerFixed
 import tf
 from rospy import Time
 import time
-from base_controllers.components.gripper_manager import GripperManager
-
+from base_controllers.components.controller_manager import ControllerManager
+from sensor_msgs import point_cloud2
+from sensor_msgs.msg import PointCloud2
 
 
 class Ur5Generic(BaseControllerFixed):
-    
+
     def __init__(self, robot_name="ur5"):
         super().__init__(robot_name=robot_name)
         self.real_robot = conf.robot_params[self.robot_name]['real_robot']
@@ -66,34 +63,40 @@ class Ur5Generic(BaseControllerFixed):
             self.gripper = True
         else:
             self.gripper = False
-        self.gm = GripperManager(self.real_robot, conf.robot_params[self.robot_name]['dt'])
 
-        #self.world_name = None # only the workbench
+        self.controller_manager = ControllerManager(conf.robot_params[self.robot_name])
+
+        self.world_name = None # only the workbench
+        self.world_name = 'mio_tavolo.world'
         #self.world_name = 'empty.world'
-        self.world_name = 'tavolo.world'
+        #self.world_name = 'palopoli.world'
 
         print("Initialized ur5 generic  controller---------------------------------------------------------------")
 
     def startRealRobot(self):
-        os.system("killall rosmaster rviz gzserver gzclient")
+        os.system("killall rviz gzserver gzclient")
         print(colored('------------------------------------------------ROBOT IS REAL!', 'blue'))
 
-        uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        roslaunch.configure_logging(uuid)
-        launch_file = rospkg.RosPack().get_path('ur_robot_driver') + '/launch/ur5e_bringup.launch'
-        cli_args = [launch_file,
-                    'headless_mode:=true',
-                    'robot_ip:=192.168.0.100',
-                    'kinematics_config:=/home/laboratorio/my_robot_calibration_1.yaml']
-
-        roslaunch_args = cli_args[1:]
-        roslaunch_file = [(roslaunch.rlutil.resolve_launch_arguments(cli_args)[0], roslaunch_args)]
-        parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
+        # uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        # roslaunch.configure_logging(uuid)
+        # launch_file = rospkg.RosPack().get_path('ur_robot_driver') + '/launch/ur5e_bringup.launch'
+        # cli_args = [launch_file,
+        #             'headless_mode:=true',
+        #             'robot_ip:=192.168.0.100',
+        #             'kinematics_config:=/home/laboratorio/my_robot_calibration_1.yaml']
+        #
+        # roslaunch_args = cli_args[1:]
+        # roslaunch_file = [(roslaunch.rlutil.resolve_launch_arguments(cli_args)[0], roslaunch_args)]
+        # parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
 
         if (not rosgraph.is_master_online()) or (
                 "/" + self.robot_name + "/ur_hardware_interface" not in rosnode.get_node_names()):
-            print(colored('Launching the ur driver!', 'blue'))
-            parent.start()
+            print(colored('No ur driver found!', 'blue'))
+            print("/" + self.robot_name + "/ur_hardware_interface")
+            print(rosnode.get_node_names())
+            sys.exit()
+            #print(colored('Launching the ur driver!', 'blue'))
+            #parent.start()
 
         # run rviz
         package = 'rviz'
@@ -118,7 +121,7 @@ class Ur5Generic(BaseControllerFixed):
                                                     Float64MultiArray, queue_size=10)
 
         self.zero_sensor = ros.ServiceProxy("/" + self.robot_name + "/ur_hardware_interface/zero_ftsensor", Trigger)
-
+        self.controller_manager.initPublishers(self.robot_name)
         #  different controllers are available from the real robot and in simulation
         if self.real_robot:
             # specific publisher for joint_group_pos_controller that publishes only position
@@ -133,6 +136,11 @@ class Ur5Generic(BaseControllerFixed):
         self.active_controller = self.available_controllers[0]
 
         self.broadcaster = tf.TransformBroadcaster()
+        # store in the param server to be used from other planners
+        self.utils = Utils()
+        self.utils.putIntoGlobalParamServer("gripper_sim", self.gripper)
+
+        self.sub_pointcloud = ros.Subscriber("/ur5/zed_node/point_cloud/cloud_registered", PointCloud2,   callback=self.receive_pointcloud, queue_size=1)
 
     def _receive_ftsensor(self, msg):
         contactForceTool0 = np.zeros(3)
@@ -168,6 +176,10 @@ class Ur5Generic(BaseControllerFixed):
         # this is expressed in the base frame
         self.x_ee = self.robot.framePlacement(self.q, self.robot.model.getFrameId(frame_name)).translation
         self.w_R_tool0 = self.robot.framePlacement(self.q, self.robot.model.getFrameId(frame_name)).rotation
+        # camera frame
+        self.x_c= self.robot.framePlacement(self.q, self.robot.model.getFrameId("zed2_left_camera_optical_frame")).translation
+        self.w_R_c = self.robot.framePlacement(self.q, self.robot.model.getFrameId("zed2_left_camera_optical_frame")).rotation
+
         # compute jacobian of the end effector in the base or world frame (they are aligned so in terms of velocity they are the same)
         self.J6 = self.robot.frameJacobian(self.q, self.robot.model.getFrameId(frame_name), False, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)                    
         # take first 3 rows of J6 cause we have a point contact            
@@ -206,15 +218,6 @@ class Ur5Generic(BaseControllerFixed):
         self.switch_controller_srv(srv)
         self.active_controller = target_controller
 
-    def send_reduced_des_jstate(self, q_des):
-        msg = Float64MultiArray()
-        msg.data = q_des
-        if self.gripper and not self.real_robot:
-            msg.data = np.append(q_des, self.gm.getDesGripperJoints())
-        else:
-            msg.data = q_des
-        self.pub_reduced_des_jstate.publish(msg)
-
     def deregister_node(self):
         super().deregister_node()
         if not self.real_robot:
@@ -222,9 +225,11 @@ class Ur5Generic(BaseControllerFixed):
             os.system(" rosnode kill /gzserver /gzclient")
 
     def plotStuff(self):
-        plotJoint('position', 0, self.time_log, self.q_log)
+        plotJoint('position', 0, self.time_log, self.q_log, self.q_des_log)
 
     def homing_procedure(self, dt, v_des, q_home, rate):
+        # broadcast base world TF
+        self.broadcaster.sendTransform(self.base_offset, (0.0, 0.0, 0.0, 1.0), Time.now(), '/base_link', '/world')
         v_ref = 0.0
         print(colored("STARTING HOMING PROCEDURE", 'red'))
         self.q_des = np.copy(self.q)
@@ -237,21 +242,31 @@ class Ur5Generic(BaseControllerFixed):
             if (e_norm != 0.0):
                 v_ref += 0.005 * (v_des - v_ref)
                 self.q_des += dt * v_ref * e / e_norm
-                self.send_reduced_des_jstate(self.q_des)
+                self.controller_manager.sendReference(self.q_des)
             rate.sleep()
             if (e_norm < 0.001):
                 self.homing_flag = False
                 print(colored("HOMING PROCEDURE ACCOMPLISHED", 'red'))
                 if self.gripper:
-                    p.gm.move_gripper(100)
+                    p.controller_manager.gm.move_gripper(30)
                 break
+
+    def receive_pointcloud(self, msg):
+        #in the zed2_left_camera_optical_frame
+        points_list = []
+        for data in point_cloud2.read_points(msg, field_names=['x','y','z'], skip_nans=False, uvs=[(671, 358)]):
+            points_list.append([data[0], data[1], data[2]])
+        #print("Data Optical frame: ", points_list)
+        pointW = self.w_R_c.dot(points_list[0]) + self.x_c + self.base_offset
+        #print("Data World frame: ", pointW)
+        #time.sleep(2)
 
 def talker(p):
     p.start()
     if p.real_robot:
         p.startRealRobot()
     else:
-        additional_args = 'gripper:=' + str(p.gripper) # +'gui:=false'
+        additional_args = ['gripper:=' + str(p.gripper), 'soft_gripper:=true']#, 'gui:=false']
         p.startSimulator(world_name=p.world_name, use_torque_control=p.use_torque_control, additional_args =additional_args)
 
     # specify xacro location
@@ -259,7 +274,8 @@ def talker(p):
     p.loadModelAndPublishers(xacro_path)
     p.initVars()
     p.startupProcedure()
-    # sleep to avoid that the robot crashes on the table
+
+    # sleep to avoid that the real robot crashes on the table
     time.sleep(3.)
 
     # loop frequency
@@ -272,36 +288,49 @@ def talker(p):
     if not p.use_torque_control:
         p.switch_controller("joint_group_pos_controller")
 
+    # homing procedure
+    if p.homing_flag:
+        if p.real_robot:
+            v_des = 0.2
+        else:
+            v_des = 0.6
+        p.homing_procedure(conf.robot_params[p.robot_name]['dt'], v_des, conf.robot_params[p.robot_name]['q_0'], rate)
+
     gripper_on = 0
-    #control loop
+
+    # launch task planner node (implement the state machine)
+
+    # launch motion node (takes care of moving the end-effector, remember to add a rate.sleep!)
+
+    # launch vision node (visual pipelines to detect object, made with service call)
+
+    #control loop (runs every dt seconds)
     while not ros.is_shutdown():
         p.updateKinematicsDynamics()
-        # homing procedure
 
-        if p.homing_flag:
-            p.homing_procedure(conf.robot_params[p.robot_name]['dt'], 0.6, conf.robot_params[p.robot_name]['q_0'], rate)
 
         ## set joints here
-        #p.q_des = p.q_des_q0  + 0.1 * np.sin(2*np.pi*0.5*p.time)
+        # p.q_des = p.q_des_q0  + 0.1 * np.sin(2*np.pi*0.5*p.time)
+        # p.qd_des = 0.1 * 2 * np.pi * 0.5* np.cos(2 * np.pi * 0.5 * p.time)*np.ones(p.robot.na)
+
         ##test gripper
         # in Simulation remember to set gripper_sim : True in params.yaml!
         # if p.time>5.0 and (gripper_on == 0):
         #     print("gripper 30")
-        #     p.gm.move_gripper(30)
+        #     p.controller_manager.gm.move_gripper(10)
         #     gripper_on = 1
         # if (gripper_on == 1) and p.time>10.0:
         #     print("gripper 100")
-        #     p.gm.move_gripper(100)
+        #     p.controller_manager.gm.move_gripper(100)
         #     gripper_on = 2
-        # need to uncomment this to be able to send joints references (leave it commented if you have an external node setting them)
-        #p.send_reduced_des_jstate(p.q_des)
+        #need to uncomment this to be able to send joints references (leave it commented if you have an external node setting them)
+        #p.controller_manager.sendReference(p.q_des, p.qd_des, p.h)
 
         if p.real_robot:
             p.ros_pub.add_arrow(p.x_ee + p.base_offset, p.contactForceW / (6 * p.robot.robot_mass), "green")
 
         # log variables
-        if (p.time > 1.0):
-            p.logData()
+        p.logData()
         # plot end-effector
         p.ros_pub.add_marker(p.x_ee + p.base_offset)
         p.ros_pub.publishVisual()
@@ -314,8 +343,6 @@ if __name__ == '__main__':
 
     p = Ur5Generic(robotName)
 
-    print("quiqui" + rospkg.RosPack().get_path('ur_description') + '/urdf/' + p.robot_name + '.urdf.xacro')
-
     try:
         talker(p)
     except (ros.ROSInterruptException, ros.service.ServiceException):
@@ -323,7 +350,6 @@ if __name__ == '__main__':
         p.deregister_node()
         if   conf.plotting:
             p.plotStuff()
-
 
     
         
