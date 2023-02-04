@@ -76,14 +76,29 @@ def process_image(image):
 
         depth_pass = depth[int(y1) - eps:int(y2) + eps, int(x1) - eps:int(x2) + eps]
 
+
+        # taking values for cropping depth map taken from cloud_registered topic
         to_crop_depth = []
 
-        for y in range(int(x1) + 5, int(x2) - 5 + 1):
-            for x in range(int(y1) + 5, int(y2) - 5 + 1):
+        # i want the cropped point cloud to have the minimum between deltax and delta y equal to this value
+        target_to_crop = 5
+
+        if x2 - x1 > y2 - y1:
+            value_to_crop = int((y2 - y1 - target_to_crop) / 2)
+        else:
+            value_to_crop = int((x2 - x1 - target_to_crop) / 2)
+
+        # get values which will be used to get the cropped point cloud
+        for y in range(int(x1) + value_to_crop, int(x2) - value_to_crop + 1):
+            for x in range(int(y1) + value_to_crop, int(y2) - value_to_crop + 1):
                 to_crop_depth.append([y, x])
                 # print(y,x)
 
-        pca(to_crop_depth)
+        final_incl = pca(to_crop_depth)
+
+        print("")
+        print(final_incl)
+        print("")
 
         return
 
@@ -287,8 +302,6 @@ def experimental_detect(original_img, img_centre, name, no_blur=False):
     return incl
 
 
-
-
 def get_inclination(circles, img_centre, image_shape):
     x_cr = 0
     y_cr = 0
@@ -392,41 +405,80 @@ def pca(to_crop):
 
     points_list = []
 
-    min = 2
-    max = 0
-    prev = 0
+    # min = 2
+    # max = 0
+    # prev = 0
     for u, v in to_crop:
         for data in point_cloud2.read_points(raw_depth, field_names=['x', 'y', 'z'], skip_nans=True, uvs=[(u, v)]):
             # print(data, u, v)
 
-            if data[2] < min:
-                min = data[2]
-            if data[2] > max:
-                max = data[2]
-
-            if prev == 0:
-                prev = data[2]
-            else:
-                if data[2] - prev > 0.01:
-                    prev = data[2]
-                    continue
+            # if data[2] < min:
+            #     min = data[2]
+            # if data[2] > max:
+            #     max = data[2]
+            #
+            # if prev == 0:
+            #     prev = data[2]
+            # else:
+            #     if data[2] - prev > 0.01:
+            #         prev = data[2]
+            #         continue
 
             points_list.append([data[0], data[1], data[2], 255])  # faking rgb values
 
-    print("MIN MAX")
-    print(min, max)
+    # print("MIN MAX")
+    # print(min, max)
     pcl_data = pcl.PointCloud_PointXYZRGB()
     pcl_data.from_list(points_list)
 
     from sklearn.decomposition import PCA
 
     # Perform PCA
-    pca = PCA(n_components=2)
-    pca.fit(pcl_data)
+    pca_conv = PCA(n_components=2)
+    pca_conv.fit(pcl_data)
 
     # Print the explained variance ratio for each principal component
-    print(pca.explained_variance_ratio_)
-    print(pca.components_)
+    print(pca_conv.explained_variance_ratio_)
+    print(pca_conv.components_)
+
+    # get index of most important feature for main component
+    max_val = -1
+    main_max_idx = 0
+    for index, val in enumerate(np.array(pca_conv.components_[0])):
+        if abs(val) > max_val:
+            main_max_idx = index
+            max_val = abs(val)
+
+    # get index of most important feature for second component
+    max_val = -1
+    second_max_idx = 0
+    for index, val in enumerate(np.array(pca_conv.components_[1])):
+        if abs(val) > max_val and index != main_max_idx:
+            second_max_idx = index
+            max_val = abs(val)
+
+    print("main indexes found")
+    print(main_max_idx, second_max_idx)
+
+    major_features_components = [main_max_idx, second_max_idx]
+
+    # get real inclination
+    if 1 not in major_features_components:
+        #print("leaning")
+        incl = "leaning"
+    else:
+        if major_features_components[0] == 1:
+            #print("standing")
+            incl = "standing"
+        else:
+            #print("up_or_own")
+            incl = "up_or_down"
+
+    return incl
+
+
+
+    # first_comp_max = max(pca.components_[0])
 
 
 def get_points_for_depth_sampling(rect_center, rect_width_height, rect_angle):
