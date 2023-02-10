@@ -8,124 +8,124 @@
 
 
 
-  		<transmission name="mountain_wire_pitch">
+  		<transmission name="mountain_wire_pitch_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="mountain_wire_pitch">
+                        <joint name="mountain_wire_pitch_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="mountain_wire_pitch">
+                        <actuator name="mountain_wire_pitch_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-		<transmission name="mountain_wire_roll">
+		<transmission name="mountain_wire_roll_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="mountain_wire_roll">
+                        <joint name="mountain_wire_roll_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="mountain_wire_roll">
+                        <actuator name="mountain_wire_roll_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>	
-                <transmission name="wire_base_prismatic">
+                <transmission name="wire_base_prismatic_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_prismatic">
+                        <joint name="wire_base_prismatic_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_prismatic">
+                        <actuator name="wire_base_prismatic_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_pitch">
+   		<transmission name="wire_base_pitch_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_pitch">
+                        <joint name="wire_base_pitch_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_pitch">
+                        <actuator name="wire_base_pitch_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_roll">
+   		<transmission name="wire_base_roll_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_roll">
+                        <joint name="wire_base_roll_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_roll">
+                        <actuator name="wire_base_roll_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_yaw">
+   		<transmission name="wire_base_yaw_l">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_yaw">
+                        <joint name="wire_base_yaw_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_yaw">
+                        <actuator name="wire_base_yaw_l">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
 
 
-	       <transmission name="mountain_wire_pitch_2">
+	       <transmission name="mountain_wire_pitch_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="mountain_wire_pitch_2">
+                        <joint name="mountain_wire_pitch_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="mountain_wire_pitch_2">
+                        <actuator name="mountain_wire_pitch_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-		<transmission name="mountain_wire_roll_2">
+		<transmission name="mountain_wire_roll_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="mountain_wire_roll_2">
+                        <joint name="mountain_wire_roll_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="mountain_wire_roll_2">
+                        <actuator name="mountain_wire_roll_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>	
-                <transmission name="wire_base_prismatic_2">
+                <transmission name="wire_base_prismatic_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_prismatic_2">
+                        <joint name="wire_base_prismatic_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_prismatic_2">
+                        <actuator name="wire_base_prismatic_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_pitch_2">
+   		<transmission name="wire_base_pitch_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_pitch_2">
+                        <joint name="wire_base_pitch_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_pitch_2">
+                        <actuator name="wire_base_pitch_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_roll_2">
+   		<transmission name="wire_base_roll_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_roll_2">
+                        <joint name="wire_base_roll_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_roll_2">
+                        <actuator name="wire_base_roll_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>
                 </transmission>
-   		<transmission name="wire_base_yaw_2">
+   		<transmission name="wire_base_yaw_r">
                         <type>transmission_interface/SimpleTransmission</type>
-                        <joint name="wire_base_yaw_2">
+                        <joint name="wire_base_yaw_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                         </joint>
-                        <actuator name="wire_base_yaw_2">
+                        <actuator name="wire_base_yaw_r">
                                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
                                 <mechanicalReduction>1</mechanicalReduction>
                         </actuator>

@@ -68,7 +68,6 @@ class Ur5Generic(BaseControllerFixed):
 
         self.world_name = None # only the workbench
         self.world_name = 'mio_tavolo.world'
-        #self.world_name = 'empty.world'
         #self.world_name = 'palopoli.world'
 
         print("Initialized ur5 generic  controller---------------------------------------------------------------")
@@ -92,8 +91,6 @@ class Ur5Generic(BaseControllerFixed):
         if (not rosgraph.is_master_online()) or (
                 "/" + self.robot_name + "/ur_hardware_interface" not in rosnode.get_node_names()):
             print(colored('No ur driver found!', 'blue'))
-            print("/" + self.robot_name + "/ur_hardware_interface")
-            print(rosnode.get_node_names())
             sys.exit()
             #print(colored('Launching the ur driver!', 'blue'))
             #parent.start()
@@ -176,9 +173,16 @@ class Ur5Generic(BaseControllerFixed):
         # this is expressed in the base frame
         self.x_ee = self.robot.framePlacement(self.q, self.robot.model.getFrameId(frame_name)).translation
         self.w_R_tool0 = self.robot.framePlacement(self.q, self.robot.model.getFrameId(frame_name)).rotation
-        # camera frame
-        self.x_c= self.robot.framePlacement(self.q, self.robot.model.getFrameId("zed2_left_camera_optical_frame")).translation
-        self.w_R_c = self.robot.framePlacement(self.q, self.robot.model.getFrameId("zed2_left_camera_optical_frame")).rotation
+
+        if self.real_robot:
+            # zed2_camera_center is the frame where point cloud is generated in REAL robot
+            pointcloud_frame = "zed2_camera_center"
+        else:
+            # left_camera_optical_frame is the frame where point cloud is generated in SIMULATION
+            pointcloud_frame = "zed2_left_camera_optical_frame"
+        # offset of the camera in the world frame
+        self.x_c= self.robot.framePlacement(self.q, self.robot.model.getFrameId(pointcloud_frame)).translation
+        self.w_R_c = self.robot.framePlacement(self.q, self.robot.model.getFrameId(pointcloud_frame)).rotation
 
         # compute jacobian of the end effector in the base or world frame (they are aligned so in terms of velocity they are the same)
         self.J6 = self.robot.frameJacobian(self.q, self.robot.model.getFrameId(frame_name), False, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)                    
@@ -248,25 +252,27 @@ class Ur5Generic(BaseControllerFixed):
                 self.homing_flag = False
                 print(colored("HOMING PROCEDURE ACCOMPLISHED", 'red'))
                 if self.gripper:
-                    p.controller_manager.gm.move_gripper(30)
+                    p.controller_manager.gm.move_gripper(100)
                 break
 
     def receive_pointcloud(self, msg):
-        #in the zed2_left_camera_optical_frame
         points_list = []
-        for data in point_cloud2.read_points(msg, field_names=['x','y','z'], skip_nans=False, uvs=[(671, 358)]):
+        #this is the center of the image plane
+        center_x = int(msg.width / 2)
+        center_y = int(msg.height / 2)
+
+        for data in point_cloud2.read_points(msg, field_names=['x','y','z'], skip_nans=False, uvs=[(center_x, center_y)]):
             points_list.append([data[0], data[1], data[2]])
         #print("Data Optical frame: ", points_list)
         pointW = self.w_R_c.dot(points_list[0]) + self.x_c + self.base_offset
         #print("Data World frame: ", pointW)
-        #time.sleep(2)
 
 def talker(p):
     p.start()
     if p.real_robot:
         p.startRealRobot()
     else:
-        additional_args = ['gripper:=' + str(p.gripper), 'soft_gripper:=true']#, 'gui:=false']
+        additional_args = ['gripper:=' + str(p.gripper), 'soft_gripper:='+ str(conf.robot_params[p.robot_name]['soft_gripper'])]#, 'gui:=false']
         p.startSimulator(world_name=p.world_name, use_torque_control=p.use_torque_control, additional_args =additional_args)
 
     # specify xacro location

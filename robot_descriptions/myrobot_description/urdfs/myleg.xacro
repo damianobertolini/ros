@@ -14,14 +14,14 @@
           
 	<joint name="${name}_shoulder_pan_joint" type="revolute">
 		<parent link="${parent}"/>
-		<child link="${name}_shoulder_link"/>
+		<child link="${name}_lowerleg"/>
 		<axis xyz="0 0 1"/>
 		<xacro:insert_block name="origin"/>
 		<limit effort="50" velocity="10.0" lower="-3.14" upper="3.14" />
 	</joint>
 	
 
-	<link name="${name}_shoulder_link">
+	<link name="${name}_lowerleg">
 		<inertial>
 			<origin xyz="0.0 0.0 0.0"/>
 			<mass value="2" />
@@ -43,7 +43,7 @@
 
         <joint name="${name}_foot_fixed" type="fixed">
             <origin rpy="0 0 0" xyz="0 0 -0.1"/>
-            <parent link="${name}_shoulder_link"/>
+            <parent link="${name}_lowerleg"/>
             <child link="${name}_foot"/>
         </joint>
 

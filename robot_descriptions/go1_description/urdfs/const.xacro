@@ -34,20 +34,20 @@
     <xacro:property name="hip_offset" value="0.08"/>
 
     <!-- joint limits -->
-    <xacro:property name="damping" value="0.01"/>
+    <xacro:property name="damping" value="0.00"/>
     <xacro:property name="friction" value="0.0"/>
-    <xacro:property name="haa_max" value="60"/>
-    <xacro:property name="haa_min" value="-60"/>
-    <xacro:property name="haa_velocity_max" value="30.1"/>
-    <xacro:property name="haa_torque_max" value="23.7"/>
-    <xacro:property name="hfe_max" value="170"/>
-    <xacro:property name="hfe_min" value="-38"/>
-    <xacro:property name="hfe_velocity_max" value="30.1"/>
-    <xacro:property name="hfe_torque_max" value="23.7"/>
-    <xacro:property name="kfe_max" value="-48"/>
-    <xacro:property name="kfe_min" value="-156"/>
-    <xacro:property name="kfe_velocity_max" value="30.1"/>
-    <xacro:property name="kfe_torque_max" value="23.7"/>
+    <xacro:property name="haa_max" value="360"/>
+    <xacro:property name="haa_min" value="-360"/>
+    <xacro:property name="haa_velocity_max" value="3000"/>
+    <xacro:property name="haa_torque_max" value="2370"/>
+    <xacro:property name="hfe_max" value="360"/>
+    <xacro:property name="hfe_min" value="-360"/>
+    <xacro:property name="hfe_velocity_max" value="3000"/>
+    <xacro:property name="hfe_torque_max" value="2370"/>
+    <xacro:property name="kfe_max" value="360"/>
+    <xacro:property name="kfe_min" value="-360"/>
+    <xacro:property name="kfe_velocity_max" value="3000"/>
+    <xacro:property name="kfe_torque_max" value="2370"/>
 
     <!-- dynamics inertial value        total 12.84kg -->
     <!-- trunk -->

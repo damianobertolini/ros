@@ -22,9 +22,9 @@
     <xacro:property name="hfe_min_soft" value="-1.45"/>
 
 
-    <!-- torque limits -->
+    <!-- torque limits real should be 1.57-->
 
-    <xacro:property name="MAX_TORQUE" value="10" />
+    <xacro:property name="MAX_TORQUE" value="5." />
 
 
 </robot>

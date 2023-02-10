@@ -28,9 +28,12 @@ if __name__ == "__main__":
         if len(sys.argv) < 2:
                 sleep_time = 0.0
         else:
-                print( sys.argv[1])
                 sleep_time = float(sys.argv[1])
-
+                
+        if len(sys.argv) < 3:
+                go0_conf = "home"
+        else:
+                go0_conf = sys.argv[2]
         # Defined the variables
         param_name              = ""
         model_name              = ""
@@ -44,14 +47,22 @@ if __name__ == "__main__":
         robot_description_name             = 'robot_description'
         robot_semantic_description_name    = 'robot_semantic_description'
 
-        srdf_data = rospy.get_param(robot_semantic_description_name)
+        # srdf_data = rospy.get_param(robot_semantic_description_name)
 
-        robot = SRDF.from_xml_string(srdf_data)
+        # robot = SRDF.from_xml_string(srdf_data)
 
-        for joint in robot.group_state_map['home'].joints:
-                joint_names.append(joint.name)
-                joint_positions.append(joint.value[0])
+        # for joint in robot.group_state_map['home'].joints:
+        #         joint_names.append(joint.name)
+        #         joint_positions.append(joint.value[0])
 
+
+        for joint in rospy.get_param('/'+model_name+'/ros_impedance_controller/joints'):
+            joint_names.append(joint)
+            joint_positions.append(rospy.get_param('/'+model_name+'/ros_impedance_controller/'+go0_conf+'/'+joint))
+            
+            rospy.set_param('/'+model_name+'/ros_impedance_controller/home/'+joint, joint_positions[-1])
+            
+        
         rospy.wait_for_service('%s/set_model_configuration'%(gazebo_namespace))
         try:
                 success = gazebo_interface.set_model_configuration_client(model_name, param_name,

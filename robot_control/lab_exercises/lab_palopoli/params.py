@@ -13,8 +13,8 @@ robot_params['myrobot'] ={'dt': 0.001,
                         'kp': np.array([10.,   10.,    10.,  10.]),
                         'kd':  np.array([1.,    1.,    1.,   1.  ]),
                         'q_0':  np.array([0, 0, 0, 0]),
-                        'joint_names': ['lf_shoulder_pan', 'rf_shoulder_pan',  'lh_shoulder_pan', 'rh_shoulder_pan'],
-                        'ee_frames': ['lf_foot', 'rf_foot', 'lh_foot','rh_foot'],
+                        'joint_names': ['lf_shoulder_pan', 'lh_shoulder_pan',  'rf_shoulder_pan', 'rh_shoulder_pan'],
+                        'ee_frames': ['lf_foot', 'lh_foot', 'rf_foot','rh_foot'],
                         'spawn_x': 0.0,
                         'spawn_y': 0.0,
                         'spawn_z': 1.0,
@@ -29,7 +29,8 @@ robot_params['ur5'] ={'dt': 0.001,
                        'control_mode': 'point', # 'trajectory','point'
                        'real_robot': False,
                        'control_type': 'position', # 'position', 'torque'
-                       'gripper_sim': True, # False: the gripper is treated as a Rigid Body, True: you can move the finger joints
+                       'gripper_sim': False, # False: the gripper is treated as a Rigid Body, True: you can move the finger joints
+                       'soft_gripper': False, # False: 3 finger rigid gripper, True: 2 finger soft gripper
                        'spawn_x' : 0.5,
                        'spawn_y' : 0.35,
                        'spawn_z' : 1.75}

@@ -405,26 +405,34 @@ def pca(to_crop):
 
     points_list = []
 
-    # min = 2
-    # max = 0
-    # prev = 0
+    min = 2
+    max = 0
+    prev = 0
     for u, v in to_crop:
         for data in point_cloud2.read_points(raw_depth, field_names=['x', 'y', 'z'], skip_nans=True, uvs=[(u, v)]):
             # print(data, u, v)
 
-            # if data[2] < min:
-            #     min = data[2]
-            # if data[2] > max:
-            #     max = data[2]
-            #
-            # if prev == 0:
-            #     prev = data[2]
-            # else:
-            #     if data[2] - prev > 0.01:
-            #         prev = data[2]
-            #         continue
+            if data[2] < min:
+                min = data[2]
+            if data[2] > max:
+                max = data[2]
+
+            if prev == 0:
+                prev = data[2]
+            else:
+                if data[2] - prev > 0.01:
+                    prev = data[2]
+                    continue
 
             points_list.append([data[0], data[1], data[2], 255])  # faking rgb values
+
+    # remove max depth values which might be point of the table
+    print(len(points_list))
+    for point in points_list:
+        if point[2] >= max - (max - min) * 0.2:
+            points_list.remove(point)
+
+    print(len(points_list))
 
     # print("MIN MAX")
     # print(min, max)
@@ -452,10 +460,19 @@ def pca(to_crop):
     # get index of most important feature for second component
     max_val = -1
     second_max_idx = 0
+    second_second_val = 0
     for index, val in enumerate(np.array(pca_conv.components_[1])):
         if abs(val) > max_val and index != main_max_idx:
+            second_second_val = max_val
+
             second_max_idx = index
             max_val = abs(val)
+
+    third_idx = [0, 1, 2]
+    third_idx.remove(main_max_idx)
+    third_idx.remove(second_max_idx)
+
+    diff_second_comp = max_val - second_second_val
 
     print("main indexes found")
     print(main_max_idx, second_max_idx)
@@ -463,7 +480,7 @@ def pca(to_crop):
     major_features_components = [main_max_idx, second_max_idx]
 
     # get real inclination
-    if 1 not in major_features_components:
+    if 1 not in major_features_components and diff_second_comp > 0.2:
         #print("leaning")
         incl = "leaning"
     else:
@@ -677,7 +694,7 @@ def listener():
                      callback=tada, queue_size=1)
 
     # Create a ROS Timer for publishing data
-    rospy.Timer(rospy.Duration(2), processing_callback)
+    rospy.Timer(rospy.Duration(5), processing_callback)
 
     rospy.spin()
 

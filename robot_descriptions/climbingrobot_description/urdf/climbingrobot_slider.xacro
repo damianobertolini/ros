@@ -3,7 +3,7 @@
   <!-- This file is based on: https://atlas.is.localnet/confluence/display/AMDW/Quadruped+URDF+Files -->
 
     <!--- new_gazebo_version should be false by default because pinocchio needs it!-->
-    <xacro:arg name="robot_name" default="climbingrobot"/> 
+    <xacro:arg name="robot_name" default="climbingrobot_slider"/> 
     <xacro:arg name="new_gazebo_version" default="false"/>	
     <xacro:arg name="anchorZ" default="20."/>	
 

@@ -3,9 +3,7 @@
 
 	<arg name="rviz_conf" default="$(find climbingrobot_description)/rviz/conf.rviz"/>
 	<arg name="robot_name" default="climbingrobot"/>
-	<arg name="spawn_x" default="0.0" />
-	<arg name="spawn_y" default="0.0" />
-	<arg name="spawn_z" default="2.0" />
+
 
 	<env name="GAZEBO_MODEL_PATH" value="$(find climbingrobot_description)"/>
 

@@ -8,7 +8,7 @@
        <arg name="spawn_z" default="20."/>	
 
        <arg name="spawn_2x" default="0."/>	
-       <arg name="spawn_2y" default="10."/>	
+       <arg name="spawn_2y" default="5."/>	
        <arg name="spawn_2z" default="20"/>	
 
 

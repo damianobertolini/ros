@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="climbingrobot" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="climbingrobot_slider" xmlns:xacro="http://ros.org/wiki/xacro">
  
 		
      <group_state name="home" group="all_legs">

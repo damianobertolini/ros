@@ -51,7 +51,7 @@ class InverseKinematics:
         self._lowerleg_id_dict = {}
         self._foot_id_dict = {}
 
-        legs = ['lf', 'rf', 'lh', 'rh']
+        legs = ['lf', 'lh', 'rf', 'rh']
 
         for leg in legs:
             self._hip_id_dict[leg] = self.robot.model.getFrameId(leg + '_hip')
@@ -101,7 +101,7 @@ class InverseKinematics:
         self.KneeInward = KNEE_INWARD
         self.KneeOutward = KNEE_OUTWARD
 
-    def ik_leg(self, foot_pos, foot_idx, hip=HIP_DOWN, knee=KNEE_INWARD):
+    def ik_leg(self, foot_pos, foot_idx, hip=HIP_DOWN, knee=KNEE_INWARD, verbose = False):
         # import warnings
         # warnings.filterwarnings("error")
         q = np.zeros(3)
@@ -121,7 +121,8 @@ class InverseKinematics:
         #     print('sq', sq)
 
         if sq < 0:
-            print('foot is higher that hip!')
+            if verbose:
+                print('foot is higher that hip!')
             return q, isFeasible
         HAA_foot_z = np.sqrt(sq)
 
@@ -131,7 +132,8 @@ class InverseKinematics:
         # Verify if the foot is inside the work space of the leg (WS1)
         if (HAA_foot_x ** 2 + HAA_foot_z ** 2) > (
                 self.measures[leg]['HFE_2_KFE_z'] + self.measures[leg]['KFE_2_FOOT_z']) ** 2:
-            print('Foot position is out of the workspace')
+            if verbose:
+                print('Foot position is out of the workspace')
             return q, isFeasible
 
         #################
@@ -141,9 +143,9 @@ class InverseKinematics:
         ratio = 1 / (self.measures[leg]['HAA_2_FOOT_y'] ** 2 + HAA_foot_z ** 2)
 
         cos_qHAA = ratio * (self.measures[leg]['HAA_2_FOOT_y'] * HAA_foot_y + HAA_foot_z * foot_pos[2])
-        cos_qHAA = np.round(cos_qHAA, 10)
+        cos_qHAA = self.clip_scalar(cos_qHAA, -1.0, 1.0)
         sin_qHAA = ratio * (-HAA_foot_z * HAA_foot_y + self.measures[leg]['HAA_2_FOOT_y'] * foot_pos[2])
-        sin_qHAA = np.round(sin_qHAA, 10)
+        sin_qHAA = self.clip_scalar(sin_qHAA, -1.0, 1.0)
 
         qHAA = np.arctan2(sin_qHAA, cos_qHAA)
 
@@ -156,10 +158,10 @@ class InverseKinematics:
         den = 2 * self.measures[leg]['HFE_2_KFE_z'] * self.measures[leg]['KFE_2_FOOT_z']
 
         cos_qKFE = num / den
-        cos_qKFE = np.round(cos_qKFE, 10)
+        cos_qKFE = self.clip_scalar(cos_qKFE, -1.0, 1.0)
 
         sin_qKFE = np.sqrt(1 - cos_qKFE ** 2)
-        sin_qKFE = np.round(sin_qKFE, 10)
+        sin_qKFE = self.clip_scalar(sin_qKFE, -1.0, 1.0)
 
         if foot_idx == self._foot_id_dict['lf'] or foot_idx == self._foot_id_dict['rf']:
             if knee == KNEE_INWARD:
@@ -179,13 +181,13 @@ class InverseKinematics:
                 self.measures[leg]['KFE_2_FOOT_z'] * self.measures[leg]['HFE_2_KFE_z'] * cos_qKFE)
 
         cos_qHFE = (c_num0 + c_num1) / den
-        cos_qHFE = np.round(cos_qHFE, 10)
+        cos_qHFE = self.clip_scalar(cos_qHFE, -1.0, 1.0)
 
         s_num0 = -(self.measures[leg]['HFE_2_KFE_z'] + self.measures[leg]['KFE_2_FOOT_z'] * cos_qKFE) * HAA_foot_x
         s_num1 = self.measures[leg]['KFE_2_FOOT_z'] * sin_qKFE * HAA_foot_z
 
         sin_qHFE = (s_num0 + s_num1) / den
-        sin_qHFE = np.round(sin_qHFE, 10)
+        sin_qHFE = self.clip_scalar(sin_qHFE, -1.0, 1.0)
 
         qHFE = np.arctan2(sin_qHFE, cos_qHFE)
 
@@ -201,19 +203,29 @@ class InverseKinematics:
             isFeasible = True
         else:
             outROMidx = np.hstack([np.where(cond_upper == False)[0],np.where(cond_lower == False)[0]])
-            print('IK produced a solution for leg '+ leg+ ' out of ROM for joint(s) '+str(outROMidx))
+            if verbose:
+                print('IK produced a solution for leg '+ leg+ ' out of ROM for joint(s) '+str(outROMidx))
 
         return q, isFeasible
 
 
     def diff_ik_leg(self, q_des, B_v_foot, foot_idx, damp, update=True):
         leg = self.robot.model.frames[foot_idx].name[:2]
-        self._q_neutral[7:] = self.u.mapToRos(q_des)
+        self._q_neutral[7:] = q_des
         B_J = self.robot.frameJacobian(self._q_neutral, foot_idx, update, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:3, self._leg_joints[leg]]
         for i in range(3):
             B_J[i,i] += damp
         qd_leg =  np.linalg.inv(B_J) @ B_v_foot
         return qd_leg
+
+    @staticmethod
+    def clip_scalar(a, min, max):
+        # this method is 100x faster than np.clip(a, min, max) (tha is suited for ndarray, not for scalars)
+        if min > a:
+            return min
+        if max < a:
+            return max
+        return a
 
 
 
@@ -293,10 +305,10 @@ if __name__ == '__main__':
     # knee = [KNEE_INWARD] * 4
 
     robot_name = 'go1'
-    qj = np.array([ 0.2, 0.7, -1.4,   # lf
-                   0.2, 0.7, -1.4,    # lh
-                   -0.2, 0.7, -1.4,   # rf
-                   -0.2, 0.7, -1.4])  # rh
+    qj = np.array([0.2, 0.78, -1.7,
+                   0.2, 0.78, -1.7,
+                   -0.2, 0.78, -1.7,
+                   -0.2, 0.78, -1.7])
     hip = [HIP_DOWN] * 4
     knee = [KNEE_INWARD] * 2 + [KNEE_OUTWARD] * 2
 

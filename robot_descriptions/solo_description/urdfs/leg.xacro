@@ -39,7 +39,7 @@
             <!--HAA JOINT: Joint between the trunk and the hip assembly -->
             <joint name="${prefix}_haa_joint" type="revolute">
                 <parent link="trunk"/>
-                <child link="${prefix}_hip_assembly"/>
+                <child link="${prefix}_hip"/>
                 <!-- joints rotates around the x-axis -->
                 <axis xyz="1 0 0"/>
                 
@@ -80,7 +80,7 @@
 
 
             <!-- HIP ASSEMBLY -->	
-            <link name="${prefix}_hip_assembly">
+            <link name="${prefix}_hip">
             	<!-- create a dummy hip_assembly link to join the two joints -->
             	<!-- HIP ASSEMBLY VISUAL-->	
 	            <visual>
@@ -201,7 +201,7 @@
                         
             <!--HFE JOINT-->
             <joint name="${prefix}_hfe_joint" type="revolute">
-                <parent link="${prefix}_hip_assembly"/>
+                <parent link="${prefix}_hip"/>
                 <child link="${prefix}_upperleg"/>
                 <!-- joints rotates around the y-axis -->
                 <axis xyz="0 1 0"/>

@@ -11,6 +11,7 @@ from base_controllers.components.filter import SecondOrderFilter
 import rospy as ros
 from std_srvs.srv import Trigger, TriggerRequest
 from  termcolor import  colored
+from ros_impedance_controller.srv import generic_float
 
 class GripperManager():
     def __init__(self, real_robot_flag = False, dt = 0.001, gripping_duration = 5.):
@@ -26,6 +27,12 @@ class GripperManager():
             self.number_of_fingers = 3
         self.SO_filter = SecondOrderFilter(self.number_of_fingers)
         self.SO_filter.initFilter(self.q_des_gripper,dt)
+        ros.Service('move_gripper', generic_float, self.move_gripper_callback)
+
+    def move_gripper_callback(self, req):
+        diameter = req.data
+        self.move_gripper(diameter)
+        return True
 
     def resend_robot_program(self):
         ros.sleep(1.5)
@@ -49,11 +56,14 @@ class GripperManager():
         return self.SO_filter.filter(self.q_des_gripper, self.gripping_duration)
 
     def move_gripper(self, diameter = 30, status = 'close'):
+        # this is for the simulated robot, the diameter is converted into q for the fingers, that
+        # will be appended to the desired joint published by the controller manager
         if not self.real_robot:
             q_finger = self.mapToGripperJoints(diameter)
             self.q_des_gripper = q_finger * np.ones(self.number_of_fingers)
             return
 
+        # this is for the real robot, is a service call that sends a sting directly to the URcap driver
         import socket
 
         HOST = "192.168.0.100"  # The UR IP address
@@ -71,8 +81,10 @@ class GripperManager():
         if self.soft_gripper:
             if diameter > 30.:
                 script = scripts_path + 'soft_open.script'
-            else:
+            elif diameter < 30.:
                 script = scripts_path + 'soft_close.script'
+            else:
+                script = scripts_path + 'soft_idle.script'
 
             f = open(script, "rb")
             l = f.read(2024)
@@ -82,6 +94,7 @@ class GripperManager():
             f.close()
             self.resend_robot_program()
         else:
+            # 3 finger rigid gripper
             onrobot_script = scripts_path + "/onrobot_superminimal.script"
             file = open(onrobot_script, "rb")  # Robotiq Gripper
             lines = file.readlines()
