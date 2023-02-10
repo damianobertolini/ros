@@ -52,6 +52,12 @@ class Helper{
         int fill_pr_i_f(Eigen::Vector < double, 6 > & pr_i, Eigen::Vector < double, 6 > & pr_f){
 
             std::ifstream myfile ("master_positions.txt");
+
+            if(!myfile){
+                cout << "\nmanca master_positions.txt in ros_ws(o catkin_ws)\n";
+                exit(-1);
+            }
+
             float f[6];
             for(int i=0; i < 6; i++){
                 myfile >> f[i];
@@ -74,6 +80,12 @@ class Helper{
         int fill_pr_next(Eigen::Vector < double, 6 > & pr_f){
 
             std::ifstream myfile ("pr_next.txt");
+
+            if(!myfile){
+                cout << "\nmanca pr_next.txt in ros_ws(o catkin_ws)\n";
+                exit(-1);
+            }
+
             float f[6];
             for(int i=0; i < 6; i++){
                 myfile >> f[i];

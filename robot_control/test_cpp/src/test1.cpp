@@ -122,37 +122,47 @@ int main(int argc, char ** argv) {
         //help.fill_pr_i_f(pr_i,pr_f);
         pr_f = Eigen::Vector<double,6>();
         
-        cout << "cin per stalling: ";
-        cin >> f;
+        cout << "cin per stalling... 0 per muove il braccio, altrimenti un valore per il gripper";
+        cin >> f;//f float
 
-        help.fill_pr_next(pr_f);
+        //robot.set_gripper(f);
+
+        if(f!=0){
+            robot.publish_grip(f);
+            //cout << "\nset gripper to: " << f << endl;
+        }else{
+            help.fill_pr_next(pr_f);
 
         //cout << "moving to" << pr_f << endl;
 
-        robot.move_to(pr_f,3000,f,false);
-
-        kin.compute_fc(pr_f);//finale teorica
+            robot.move_to(pr_f,3000,f,false);
+            kin.compute_fc(pr_f);//finale teorica
         
-        p_theo << pr_f[0],pr_f[1],pr_f[2];
-        q = robot.j_to_q(Robot::joint);//prendo la posizione reale
-        kin.compute_fc(q);
-        p_real= kin.get_ee_p();
+            p_theo << pr_f[0],pr_f[1],pr_f[2];
+            q = robot.j_to_q(Robot::joint);//prendo la posizione reale
+            kin.compute_fc(q);
+            p_real= kin.get_ee_p();
 
-        delta = help.dist(p_theo,p_real);
+            delta = help.dist(p_theo,p_real);
 
-        cout << "teorico: " << p_theo << endl;
-        cout << "reale: " << p_real << endl;
-        cout << "delta: " << delta << endl;
+            cout << "teorico: " << p_theo << endl;
+            cout << "reale: " << p_real << endl;
+            cout << "delta: " << delta << endl;
+        }
+
+        
 
         //Robot::print_position();
 
         sleep(3);
 
+        //robot.set_gripper(0);
+
         cout << "\n------------------------------------------------------------\n";
 
         
     }
-    /*
+/*
     cout << "inizio" << endl;
     cout << "testing kin" << endl;
 
