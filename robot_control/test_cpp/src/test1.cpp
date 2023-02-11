@@ -4,7 +4,7 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
 #include <sensor_msgs/JointState.h>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 //#include <eigen3/Eigen/Eigen>
 #include <sstream>
 #include "Helper.cpp"

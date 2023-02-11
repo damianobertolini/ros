@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 #include <cmath>
 
 //#include "robot.cpp"

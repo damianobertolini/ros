@@ -29,17 +29,54 @@ import math
 
 from imutils import contours as imcontours
 
+# custom created messages
+from messages.msg import Pointxyz
+from messages.msg import Block
+from messages.msg import BlockList
+
 
 # esegue yolo detect.py su immagine specificata nel path e da in output immagini trovate e ritagliate
 def process_image(image):
     model = torch.hub.load("../../../yolov5/", 'custom', path="../../../yolov5/best.pt", source='local')
 
-    # resize image for yolo detection (from 1280x720 to 640x360)
+    # resize image for yolo detection (from 1920x1080 to 640x360)
     image_resized = cv2.resize(image, [640, 360], interpolation=cv2.INTER_AREA)
 
     model.conf = 0.6
     results = model(image_resized)
     result_dict = results.pandas().xyxy[0].to_dict(orient="records")
+
+    to_delete = []
+
+    # eliminare predictions vicine in base a conf maggiore
+    for det1 in result_dict:
+        x11 = float(det1['xmin'])
+        y11 = float(det1['ymin'])
+        x21 = float(det1['xmax'])
+        y21 = float(det1['ymax'])
+        conf1 = float(det1['confidence'])
+
+        for det2 in result_dict:
+            x12 = float(det2['xmin'])
+            y12 = float(det2['ymin'])
+            x22 = float(det2['xmax'])
+            y22 = float(det2['ymax'])
+            conf2 = float(det2['confidence'])
+
+            if abs(x11 - x12) < 5 and abs(y11 - y12) < 5 and abs(x21 - x22) < 5 and abs(
+                    y21 - y22) < 5:  # two very near labels
+                if conf1 > conf2:  # take the one with best accuracy
+                    to_delete.append(conf2)
+                else:
+                    to_delete.append(conf1)
+
+    for to_del in to_delete:
+        if to_del in result_dict:  # since the above part is not very efficient it will take every to_del twice
+            # example: x1.conf > x2.conf, but later in the for loop: x2.conf < x1.conf -> counted twice
+            result_dict.remove(to_del)
+
+    block_list = BlockList()
+    block_list_confs = []
 
     print("YOLO result dict:")
     print(result_dict)
@@ -57,10 +94,10 @@ def process_image(image):
             continue  # not inside table
 
         # per template matching uso immagine 1280per 720 -> trasformo da 640 360
-        x1 = 2 * x1
-        x2 = 2 * x2
-        y1 = 2 * y1
-        y2 = 2 * y2
+        x1 = 3 * x1
+        x2 = 3 * x2
+        y1 = 3 * y1
+        y2 = 3 * y2
 
         # TODO aggiungere ricerca in base a conf maggiore e eliminare predictions vicine
 
@@ -101,13 +138,33 @@ def process_image(image):
 
         cv2.imwrite("final.jpg", with_center_image)
 
-        risultato_temporaneo = str(str(int(cs)) + " " + str(real_coord_x) + " " + str(real_coord_y) + " " + str(rect_angle) + " " + str(center_depth[0][2]))
+        point = Pointxyz(real_coord_x, real_coord_y, center_depth[0][2])
 
-        global res_pub
+        block = Block()
+        block.class_number = str(cs)
+        block.point = point
+        block.rot_angle = rect_angle
+        block.confidence = conf
 
-        res_pub.publish(risultato_temporaneo)
+        # this are not needed in this program
+        block.top_btm_l_r = ["", ""]
+        block.up_dw_stand_lean = ""
 
-    #print("finito")
+        # sort block list based on fifth component (confidence)
+        block_list_confs.append(conf)
+
+        sorted_conf = sorted(enumerate(block_list_confs), key=lambda conf_num: conf_num[1])
+        new_block_index = [i[0] for i in sorted_conf if i[1] == conf]
+
+        block_list.blocks.insert(new_block_index[0], block)
+
+        # when finished publish result but before sort BlockList by confidence
+    global res_pub
+
+    res_pub.publish(block_list.blocks)
+
+
+#print("finito")
 
 
 # crea bounding box rettangolare NON ruotata attorno a contorno del blocco (usa canny per trovare edges) e trova
@@ -228,11 +285,11 @@ def from_raw_to_jpg_compliant():
     i = 0
 
     image_arr = []
-    while i < tot_data / (1280 * 3):
+    while i < tot_data / (1920 * 3):
         riga = []
         j = 0
-        while j < tot_data / (720 * 3):
-            riga.append(struct.unpack_from('3B', raw_image.data, int(j * 3 + i * tot_data / 720)))
+        while j < tot_data / (1080 * 3):
+            riga.append(struct.unpack_from('3B', raw_image.data, int(j * 3 + i * tot_data / 1080)))
             j += 1
 
         image_arr.append(riga)
@@ -299,7 +356,9 @@ def processing_callback(event=None):
             raw_image = None
             raw_depth = None
 
+
 res_pub = None
+
 
 def listener():
     rospy.init_node('vision_node', anonymous=True)
@@ -312,7 +371,7 @@ def listener():
                      callback=receive_pointcloud, queue_size=1)
 
     global res_pub
-    res_pub = rospy.Publisher('vision_results', String, queue_size=10)
+    res_pub = rospy.Publisher('vision_results', BlockList, queue_size=1)
 
     # Create a ROS Timer for publishing data
     rospy.Timer(rospy.Duration(2), processing_callback)

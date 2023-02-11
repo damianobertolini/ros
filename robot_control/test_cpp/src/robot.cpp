@@ -4,7 +4,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
 //#include <std_msgs/msg/float64_multi_array.hpp>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 
 #include <sstream>
 #include <iostream>
@@ -125,7 +125,7 @@ class Robot{
             //per soft gripper
 
             for(int i=0; i< n_grip;i++){ //pos 1 2 (3)
-                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j(i) );//posizione 2
+                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j[i] );//posizione 2
                 //f64j.data.push_back( double(rand()%int(M_PI*100))/100 -  (M_PI/2) ); // random
             }
 
@@ -154,7 +154,7 @@ class Robot{
                 if(Robot::gripper_j.empty())
                     cout << "\ngripper vuoto\n";
 
-                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j(i) );//posizione 2
+                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j[i] );//posizione 2
                 f64j.data.push_back( double(rand()%int(M_PI*100))/100 -  (M_PI/2) );
             }
 
@@ -330,7 +330,7 @@ class Robot{
 //std_msgs::String Robot::msg = new std_msgs::String();
 
 int close_gripper(){
-    
+    return 0;
 }
 
 
@@ -376,7 +376,7 @@ void js_callback(const sensor_msgs::JointState& j){
 
     for(int i=0; i < Robot::n_grip; i++){
 
-        Robot::gripper_j.push_back( Robot::joint.position(i+1) );   //da posizione 1 
+        Robot::gripper_j.push_back( Robot::joint.position[i+1] );   //da posizione 1 
         Robot::joint.position.erase(std::next(Robot::joint.position.begin(), 1)); //toglie il secondo elemento n volte
 
     }

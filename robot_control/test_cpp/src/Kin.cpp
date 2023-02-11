@@ -1,7 +1,7 @@
 #ifndef KIN__CPP
 #define KIN__CPP
 
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 #include <iostream>
 #include <vector>
 #include <cmath>

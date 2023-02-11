@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 #include "Helper.cpp"
 #include <iostream>
 #include <fstream>
