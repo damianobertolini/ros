@@ -124,9 +124,10 @@ class Robot{
             
             //per soft gripper
 
-            for(int i=0; i< n_grip;i++){ //pos 1 2 (3)
-                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j[i] );//posizione 2
-                //f64j.data.push_back( double(rand()%int(M_PI*100))/100 -  (M_PI/2) ); // random
+
+            for(int i=0; i< Robot::n_grip;i++){ //pos 1 2 (3)
+                //f64j.data.insert ( std::next(f64j.data.begin()) , gripper );//posizione 2
+                f64j.data.push_back( Robot::gripper_j[i] ); // attacco lo stato corrente del gripper
             }
 
             //std::cout << "argc: " << argc << "\nargv: " << argv << std::endl;
@@ -138,7 +139,7 @@ class Robot{
             return 0;
         }
 
-        int publish_grip(double gripper = 0, int step = 1000){
+        int publish_grip(double gripper = 0){
             
             std_msgs::Float64MultiArray f64j;
             sensor_msgs::JointState joint_tmp;
@@ -149,20 +150,34 @@ class Robot{
                 f64j.data.push_back(Robot::joint.position[i]);//pubblico la stessa posizione
             }
 
-            for(int i=0; i< n_grip;i++){ //pos 1 2 (3)
+            print_f64j(f64j);
+
+            cout << "\nn_grip: " << Robot::n_grip << endl;
+
+            for(int i=0; i < Robot::n_grip ; i++){ //pos [6] [7] [8]
 
                 if(Robot::gripper_j.empty())
                     cout << "\ngripper vuoto\n";
-
-                f64j.data.insert ( std::next(f64j.data.begin()) , Robot::gripper_j[i] );//posizione 2
-                f64j.data.push_back( double(rand()%int(M_PI*100))/100 -  (M_PI/2) );
+                cout << "\nset gripper to: "<< gripper <<"\n";
+                //f64j.data.insert ( std::next(f64j.data.begin()) , gripper );//posizione [1]
+                //f64j.data.push_back( double(rand()%int(M_PI*100))/100 -  (M_PI/2) );
+                f64j.data.push_back( gripper );
             }
+
+            print_f64j(f64j);
 
             js_pub.publish(f64j);
 
             return 0;
         }
 
+        void print_f64j(std_msgs::Float64MultiArray f64j){
+            for(int i=0; i< f64j.data.size();i++){
+                cout << "\nf64j.data[" << i << "] " << f64j.data[i];
+            }
+            cout << "\n\n";
+        }
+        /*
         int publish(sensor_msgs::JointState& joint_2, bool fill = true, double gripper = 0){
 
             std_msgs::Float64MultiArray f64j;
@@ -183,10 +198,11 @@ class Robot{
             //std::cout << "joint to publish: " << joint << std::endl;
             //js_pub.publish(joint_2);
 
-            publish(th,fill,gripper);
+            publish(th,fill);
 
             return 0;
         }
+        */
 
         float move_to(Eigen::Vector < double, 6 > pr_f, int steps = 3000, float k_coeff=0.01, int fix=true){
             Helper help;
@@ -201,12 +217,16 @@ class Robot{
             Eigen::Vector < double, 6 > q = j_to_q(j_now);//punto iniziale
             
             kin.compute_fc(q);
+            pr_i=kin.get_pr_now();
+            /*
             pr_i(0) = kin.get_ee_p()[0];
             pr_i(1) = kin.get_ee_p()[1];
             pr_i(2) = kin.get_ee_p()[2];
             pr_i(3) = kin.rotm2eul(kin.T0e)[0];
             pr_i(4) = kin.rotm2eul(kin.T0e)[1];
             pr_i(5) = kin.rotm2eul(kin.T0e)[2];//sovrascrivo con la posizione attuale
+            */
+            
 
             cout << "moving from: " << pr_i << endl << endl;
             cout << "to: " << pr_f << endl << endl;
@@ -221,17 +241,19 @@ class Robot{
             cout << "path[0]" << path[0] << endl;
             cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             */
+            /*
             ofstream myfile;
             myfile.open ("path_p_theo.txt");
             for (Eigen::Vector < double, 6 > i: path_theory)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
-
+            */
+            /*
             myfile.open ("path_q_real.txt");
             for (Eigen::Vector < double, 6 > i: path)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
-
+            */
             //cout << "\npath dim: "<< path.size()<<"\n";
 
             ros::Rate loop_rate(1000);
@@ -292,6 +314,22 @@ class Robot{
         //sensor_msgs::JointState& get_latest_js(){
         //    return 0;
         //}
+        /*
+        int set_gripper(double grip_d = 0){
+
+            sensor_msgs::JointState j_tmp = Robot::joint;
+            Robot::gripper_j.clear();
+
+            for(int i=0; i < Robot::n_grip; i++){
+
+                j_tmp.position[i+1] = grip_d; //da [1] in poi
+                cout << "\nset: " << grip_d << " for gripepr " << i+1 << std::endl;
+
+            }
+
+            //publish(j_tmp);
+        }
+        */
 
         void test(){
             cout << "robot tested" << endl;
@@ -370,13 +408,13 @@ void js_callback(const sensor_msgs::JointState& j){
 	//js=joint;
     */
     Robot::joint = sensor_msgs::JointState(j);//
-    Robot::n_grip=Robot::joint.position.size()-6;//6 per joint il reto per gripper
+    Robot::n_grip=Robot::joint.position.size()-6;//6 per joint il resto per gripper
 
     Robot::gripper_j.clear();
 
     for(int i=0; i < Robot::n_grip; i++){
 
-        Robot::gripper_j.push_back( Robot::joint.position[i+1] );   //da posizione 1 
+        Robot::gripper_j.push_back( Robot::joint.position[1] );   //da posizione 1 
         Robot::joint.position.erase(std::next(Robot::joint.position.begin(), 1)); //toglie il secondo elemento n volte
 
     }
@@ -387,7 +425,7 @@ void js_callback(const sensor_msgs::JointState& j){
     //print_position();
 }
 
-void swap(float& f1,float& f2){
+void swap(double& f1,double& f2){
     float buff;
     buff=f1;
     f1=f2;

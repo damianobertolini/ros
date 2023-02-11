@@ -43,6 +43,7 @@ class Kin {
         Eigen::Matrix4d T50m;
         Eigen::Matrix4d T60m;
         Eigen::MatrixXd J;
+        int ik_index=0;
 
 
         Kin() {
@@ -66,6 +67,20 @@ class Kin {
         //cout << "eigen T0e coeff 0,3" << T0e.coeff(0,3) << endl;;
         pos << T0e.coeff(0,3), T0e.coeff(1,3), T0e.coeff(2,3);
         return pos;
+    }
+
+    Eigen::Vector < double, 6 > get_pr_now(){
+
+        Eigen::Vector < double, 6 > pr_i;
+
+        pr_i(0) = get_ee_p()[0];
+        pr_i(1) = get_ee_p()[1];
+        pr_i(2) = get_ee_p()[2];
+        pr_i(3) = rotm2eul(T0e)[0];
+        pr_i(4) = rotm2eul(T0e)[1];
+        pr_i(5) = rotm2eul(T0e)[2];//sovrascrivo con la posizione attuale
+
+        return pr_i;
     }
 
 
@@ -192,6 +207,41 @@ class Kin {
         return J;
     }
 
+    int eval_ik_index(Eigen::Vector < double, 6 > th){
+
+        compute_fc(th);
+        Eigen::Vector < double, 6 > pr_i = get_pr_now();
+        Eigen::Vector < double, 6 > tmp;
+        double delta=0;
+
+        std::vector<Eigen::Vector < double, 6 >> ik = compute_ik(pr_i);
+
+        Eigen::Vector < double, 8 > delta_vec;
+
+        for(int i=0; i< ik.size(); i++){
+            delta =0;
+            for(int j=0; j< 6; j++){
+                delta+=abs(ik[i](j)-pr_i(j));
+            }
+            delta_vec(i)=delta;
+        }
+        int index=0;
+        double min = delta_vec(0);
+
+        for(int i=0; i< 8; i++){//trovo il minimo e l'index
+            if(delta_vec(i)<min){
+                min = delta_vec(i);
+                index = i;
+            }
+        }
+
+        ik_index = index;
+        
+        cout << "errore minimo: " << min << "  a i: " << index <<  endl;
+        
+        return ik_index;
+    }
+
     std::vector<Eigen::Vector < double, 6 >> da_a(std::vector<Eigen::Vector < double, 6 >> path_pr,Eigen::Vector < double, 6 > th0, Eigen::MatrixXd k, int steps){
         
         Eigen::Vector < double, 6 > q = th0;
@@ -278,8 +328,8 @@ class Kin {
 
     std::vector<Eigen::Vector < double, 6 >> p2p(Eigen::Vector < double, 6 > pr_i, Eigen::Vector < double, 6 > pr_f, int steps = 3000, double minT = 0){
         
-        Eigen::Vector < double, 6 > q_i = compute_ik(pr_i)[0];
-        Eigen::Vector < double, 6 > q_f = compute_ik(pr_f)[0];
+        Eigen::Vector < double, 6 > q_i = compute_ik(pr_i)[ik_index];
+        Eigen::Vector < double, 6 > q_f = compute_ik(pr_f)[ik_index];
         Eigen::Matrix4d M;
         std::vector<Eigen::Vector < double, 6 >> path;
         //double minT = 0;
@@ -592,7 +642,7 @@ class Kin {
 
         swap(R(0,0),R(2,2));
         swap(R(0,1),R(1,2));
-        swap(R(1,0),R(2,1));
+        swap(R(1,0),R(2,1)); //per zyx
 
         return R;
     }
@@ -728,6 +778,7 @@ class Kin {
 
     }
 
+
     double safe_acos(const double& value) {
         if (value<=-1) {
             return M_PI;
@@ -747,7 +798,6 @@ class Kin {
             return asin(value);
         }
     }
-
 
     Eigen::MatrixXd geo2anJ(Eigen::MatrixXd J, Eigen::MatrixXd T0e_){
 
@@ -821,54 +871,53 @@ class Kin {
             return tmp;
             //rotazione e traslazione
         }
-    Eigen::Matrix4d T21f(double th2) {
-        Eigen::Matrix4d tmp;
-        tmp <<  cos(th2), -sin(th2), 0, 0,
-                0, 0, -1, 0,
-                sin(th2), cos(th2), 0, 0,
-                0, 0, 0, 1;
-        return tmp;
-    }
-    Eigen::Matrix4d T32f(double th3) {
+        Eigen::Matrix4d T21f(double th2) {
+            Eigen::Matrix4d tmp;
+            tmp <<  cos(th2), -sin(th2), 0, 0,
+                    0, 0, -1, 0,
+                    sin(th2), cos(th2), 0, 0,
+                    0, 0, 0, 1;
+            return tmp;
+        }
+        Eigen::Matrix4d T32f(double th3) {
 
-        Eigen::Matrix4d tmp;
-        tmp <<  cos(th3), -sin(th3), 0, A(1),
-                sin(th3), cos(th3), 0, 0,
-                0, 0, 1, D(2),
-                0, 0, 0, 1;
+            Eigen::Matrix4d tmp;
+            tmp <<  cos(th3), -sin(th3), 0, A(1),
+                    sin(th3), cos(th3), 0, 0,
+                    0, 0, 1, D(2),
+                    0, 0, 0, 1;
 
-        return tmp;
-    }
-    Eigen::Matrix4d T43f(double th4) {
-        Eigen::Matrix4d tmp;
-        tmp << cos(th4), -sin(th4), 0, A(2),
-                sin(th4), cos(th4), 0, 0,
-                0, 0, 1, D(3),
-                0, 0, 0, 1;
-        
+            return tmp;
+        }
+        Eigen::Matrix4d T43f(double th4) {
+            Eigen::Matrix4d tmp;
+            tmp << cos(th4), -sin(th4), 0, A(2),
+                    sin(th4), cos(th4), 0, 0,
+                    0, 0, 1, D(3),
+                    0, 0, 0, 1;
+            
 
-        return tmp;
-    }
-    Eigen::Matrix4d T54f(double th5) {
-        Eigen::Matrix4d tmp;
-        tmp << cos(th5), -sin(th5), 0, 0,
-                0, 0, -1, -D(4),
-                sin(th5), cos(th5), 0, 0,
-                0, 0, 0, 1;
+            return tmp;
+        }
+        Eigen::Matrix4d T54f(double th5) {
+            Eigen::Matrix4d tmp;
+            tmp << cos(th5), -sin(th5), 0, 0,
+                    0, 0, -1, -D(4),
+                    sin(th5), cos(th5), 0, 0,
+                    0, 0, 0, 1;
 
-        return tmp; 
-    }
-    Eigen::Matrix4d T65f(double th6) {
-        Eigen::Matrix4d tmp;
-        tmp << cos(th6), -sin(th6), 0, 0,
-                0, 0, 1, D(5),
-                -sin(th6), -cos(th6), 0, 0,
-                0, 0, 0, 1;
+            return tmp; 
+        }
+        Eigen::Matrix4d T65f(double th6) {
+            Eigen::Matrix4d tmp;
+            tmp << cos(th6), -sin(th6), 0, 0,
+                    0, 0, 1, D(5),
+                    -sin(th6), -cos(th6), 0, 0,
+                    0, 0, 0, 1;
 
-        return tmp; 
-    }
+            return tmp; 
+        }
 };
 
 
 #endif
-
