@@ -58,7 +58,7 @@ int write_at_line(int n_block, int line_number)
           float z = 0.871;
           float r = 0.0;
           float p = 0.0;
-          float ya = randomFloat(0.0, 6.28);
+          float ya = randomFloat(0.0, 6.28318);
           
       	  // write the line, including the string to append
       	  fprintf(file2, "%s""%d""%s""%d""%s""%.5f"" %.5f"" %.5f"" %.5f"" %.5f"" %.5f""%s", "    <include>\n     <name>block#", i+1, "</name>\n     <uri>model://block", block_num, "high</uri>\n     <pose>", x, y, z, r, p, ya, "</pose>\n    </include>\n\n");
