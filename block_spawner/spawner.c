@@ -53,15 +53,15 @@ int write_at_line(int n_block, int line_number)
       for(int i = 0; i < n_block; i++)
       {
           int block_num = randomInt(0,11);
-          float x = randomFloat(0.3, 0.6);
-          float y = randomFloat(0.3, 0.6);
-          float z = randomFloat(0.3, 0.6);
-          float r = randomFloat(0.3, 0.6);
-          float p = randomFloat(0.3, 0.6);
-          float ya = randomFloat(0.3, 0.6);
+          float x = randomFloat(0.05, 0.6);
+          float y = randomFloat(0.22, 0.75);
+          float z = 0.871;
+          float r = 0.0;
+          float p = 0.0;
+          float ya = randomFloat(0.0, 6.28);
           
       	  // write the line, including the string to append
-      	  fprintf(file2, "%s""%d""%s""%d""%s""%.5f"" %.5f"" %.5f"" %.5f"" %.5f"" %.5f""%s", "    <include>\n     <name>block", block_num, "high</name>\n     <uri>model://block", block_num, "high</uri>\n     <pose>", x, y, z, r, p, ya, "</pose>\n    </include>\n\n");
+      	  fprintf(file2, "%s""%d""%s""%d""%s""%.5f"" %.5f"" %.5f"" %.5f"" %.5f"" %.5f""%s", "    <include>\n     <name>block#", i+1, "</name>\n     <uri>model://block", block_num, "high</uri>\n     <pose>", x, y, z, r, p, ya, "</pose>\n    </include>\n\n");
       }
       
       break;
@@ -87,7 +87,3 @@ int randomInt(int a, int b) {
 float randomFloat(float lower_bound, float upper_bound) {
 	return ((float)rand() / RAND_MAX) * (upper_bound - lower_bound) + lower_bound;
 }
-
-
-
-
