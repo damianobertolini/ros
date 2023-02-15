@@ -4,7 +4,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
 //#include <std_msgs/msg/float64_multi_array.hpp>
-#include "Eigen/Eigen/Dense"
+#include <Eigen/Dense>
 
 #include <sstream>
 #include <iostream>
@@ -95,13 +95,13 @@ class Robot{
             //ros::Subscriber sub = n.subscribe("chatter", 10, robot_msg_callback);
             ros::Subscriber sub_js = n.subscribe("/ur5/joint_states", 1, js_callback);
 
-            cout << "start spinning " << endl;
-
-            ros::spin();
-            
-            
-            cout << "done spinning " << endl;
+            cout << "start spinning robot" << endl;
+            ros::MultiThreadedSpinner spinner(2);
+            spinner.spin();
+            cout << "done spinning robot" << endl;
         }
+
+        
 
         int publish(Eigen::Vector < double, 6 > th, bool fill = true, double gripper = 0){
             
@@ -123,7 +123,6 @@ class Robot{
             //f64j.data.push_back(gripper);
             
             //per soft gripper
-
 
             for(int i=0; i< Robot::n_grip;i++){ //pos 1 2 (3)
                 //f64j.data.insert ( std::next(f64j.data.begin()) , gripper );//posizione 2
@@ -367,9 +366,7 @@ class Robot{
 
 //std_msgs::String Robot::msg = new std_msgs::String();
 
-int close_gripper(){
-    return 0;
-}
+
 
 
 void robot_msg_callback(const std_msgs::String::ConstPtr& message){

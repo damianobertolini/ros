@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "Eigen/Eigen/Dense"
+#include <Eigen/Dense>
 #include <cmath>
 
 //#include "robot.cpp"
@@ -128,6 +128,37 @@ class Helper{
     static float abs(Eigen::Vector < double, 6 >pr_i){
 
         return std::abs(    pow(pr_i[0],2) + pow(pr_i[1],2) + pow(pr_i[2],2)    );
+    }
+
+    
+    Eigen::Vector3d cam_to_world(Eigen::Vector3d camera){
+        //camera x y depth
+        Eigen::Vector3d world;
+
+        Eigen::Matrix3d wrc;
+        Eigen::Vector3d base_offset;
+        Eigen::Vector3d xc;
+        wrc <<   0,      -0.49948,  0.86632,
+                -1,         0,          0,
+                -0,     -0.86632, -0.49948;
+        base_offset << 0.5,  0.35, 1.75;
+        xc << -0.9,0.24,-0.35;
+
+        world = wrc*camera + xc + base_offset;
+
+        return world;
+
+    }
+
+    static Eigen::Vector3d tavolo_to_robo(Eigen::Vector3d camera){
+        //camera x y depth
+        Eigen::Vector3d robo;
+        robo(0)=camera(0)-0.5;//x tavolo
+        robo(1)=0.195-(((camera(1)-0.155)/0.739)*0.645);         //y tavolo
+        robo(2)=robo(2);           
+
+        return robo;
+
     }
 
 

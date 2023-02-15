@@ -1,7 +1,7 @@
 #ifndef KIN__CPP
 #define KIN__CPP
 
-#include "Eigen/Eigen/Dense"
+#include <Eigen/Dense>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -768,14 +768,6 @@ class Kin {
         if(d!=d)
             return 0;
         return d;
-    }
-
-    Eigen::Vector3d cam_to_table(Eigen::Vector3d camera){
-        //camera x y depth
-        Eigen::Vector3d table;
-
-        return table;
-
     }
 
 
