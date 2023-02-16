@@ -229,7 +229,7 @@ void task3(int n_blocks) {
             break;
           case 4:
             r = 3.14159;
-            z += 0.2;
+            z += 0.05;
             break;
         }
 
