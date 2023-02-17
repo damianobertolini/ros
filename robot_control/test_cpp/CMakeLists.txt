@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  my_vision_messages
 )
 find_package(Eigen3 REQUIRED)
 
