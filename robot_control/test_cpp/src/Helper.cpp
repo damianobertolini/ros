@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 #include <cmath>
 
 //#include "robot.cpp"
@@ -160,6 +160,53 @@ class Helper{
         return robo;
 
     }
+
+    
+    double constrainAngle(double x){
+        x = fmod(x,M_PI*2);
+        if (x < 0)
+            x += M_PI*2.0;
+        return x;
+    }
+
+    double dist_constrain(double x){
+        
+        if (x > M_PI)//wrapping
+            return std::abs(2*M_PI-x);
+        return x;
+    }
+
+    double constrainAngle180(double x){
+        x = fmod(x + M_PI,M_PI*2);
+        if (x < 0)
+            x += M_PI*2;
+        return x - M_PI;
+    }
+
+    Eigen::Vector<double, 6> constrainAngle(Eigen::Vector<double, 6> q){
+        Eigen::Vector<double, 6> ret;
+        for(int i=0; i< 6; i++){
+            ret(i)=constrainAngle(q(i));
+        }
+        return ret;
+    }
+    Eigen::Vector<double, 6> constrainAngle180(Eigen::Vector<double, 6> q){
+        Eigen::Vector<double, 6> ret;
+        for(int i=0; i< 6; i++){
+            ret(i)=constrainAngle180(q(i));
+        }
+        return ret;
+    }
+
+    Eigen::Vector<double, 6> dist_constrain(Eigen::Vector<double, 6> q){
+        Eigen::Vector<double, 6> ret;
+        for(int i=0; i< 6; i++){
+            ret(i)=dist_constrain(q(i));
+        }
+        return ret;
+    }
+
+
 
 
         

@@ -12,7 +12,7 @@
 //#include "msg/Block.h"
 //#include "msg/BlockList.h"
 #include <sensor_msgs/JointState.h>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 //#include <eigen3/Eigen/Eigen>
 #include <sstream>
 #include "Helper.cpp"
@@ -32,20 +32,15 @@
 //#include "/home/massiccio/ros_ws/devel/include/messages//BlockList.h"
 
 
-
-
 #include <iostream>
 #include <fstream>
 
 #define STEPS 30
 #define SAFE_Z 0.65
-Helper helper;
-
-
 
 using namespace std;
 
-
+Helper helper;
 my_vision_messages::BlockList BlockList;
 
 
@@ -169,17 +164,16 @@ int main(int argc, char ** argv) {
     string s;
     float f;
 
+    kin.eval_ik_index(robot.j_to_q(Robot::joint));
 
-
-
-    help.fill_pr_i_f(pr_i,pr_f);
+    //help.fill_pr_i_f(pr_i,pr_f);
 
     cout << "\n------------------------------------------------------------\n" ;
 
     q << 0.1518,   -0.1912,    0.4505 ,0,0,0;
     
     
-    robot.move_to(pr_i,3000,1,false);//sposto alla posizione iniziale voluta
+    //robot.move_to(pr_i,3000,1,false);//sposto alla posizione iniziale voluta
 
     cout << "fatto" << endl;
     q=robot.j_to_q(Robot::joint);//dove sono adesso
@@ -221,7 +215,9 @@ int main(int argc, char ** argv) {
             help.fill_pr_next(pr_f);
 
         //cout << "moving to" << pr_f << endl;
-
+            //cout << "joint j_to_q:" << robot.j_to_q(Robot::joint) << endl;
+            //cout << "robot::joint: " << Robot::joint;
+            kin.eval_ik_index(robot.j_to_q(Robot::joint));
             robot.move_to(pr_f,3000,f,false);
             kin.compute_fc(pr_f);//finale teorica
         

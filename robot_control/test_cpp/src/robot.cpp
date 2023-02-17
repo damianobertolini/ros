@@ -4,7 +4,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
 //#include <std_msgs/msg/float64_multi_array.hpp>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 
 #include <sstream>
 #include <iostream>
@@ -203,7 +203,7 @@ class Robot{
         }
         */
 
-        float move_to(Eigen::Vector < double, 6 > pr_f, int steps = 3000, float k_coeff=0.01, int fix=true){
+        float move_to(Eigen::Vector < double, 6 > pr_f, int steps = 3000, float k_coeff=0.01, int fix=false){
             Helper help;
             Eigen::MatrixXd k = Eigen::MatrixXd::Identity(6,6) * k_coeff;
             sensor_msgs::JointState j_now = joint;
@@ -214,6 +214,7 @@ class Robot{
 
             //help.fill_pr_i_f(pr_i,pr_f);//prendo il punto finale
             Eigen::Vector < double, 6 > q = j_to_q(j_now);//punto iniziale
+            //q = help.constrainAngle180(q);//180-180
             
             kin.compute_fc(q);
             pr_i=kin.get_pr_now();
@@ -230,7 +231,7 @@ class Robot{
             cout << "moving from: " << pr_i << endl << endl;
             cout << "to: " << pr_f << endl << endl;
 
-            vector<Eigen::Vector < double, 6 >> path_theory = kin.fillpath(q,pr_f, steps);
+            //vector<Eigen::Vector < double, 6 >> path_theory = kin.fillpath(q,pr_f, steps);
             //vector<Eigen::Vector < double, 6 >> path = kin.da_a(path_theory,q,k,steps);
             vector<Eigen::Vector < double, 6 >> path = kin.p2p(pr_i,pr_f,steps);
             /*
@@ -240,19 +241,20 @@ class Robot{
             cout << "path[0]" << path[0] << endl;
             cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             */
-            /*
             ofstream myfile;
+            /*
+            
             myfile.open ("path_p_theo.txt");
             for (Eigen::Vector < double, 6 > i: path_theory)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
             */
-            /*
-            myfile.open ("path_q_real.txt");
+            
+            myfile.open ("path.txt");
             for (Eigen::Vector < double, 6 > i: path)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
-            */
+            
             //cout << "\npath dim: "<< path.size()<<"\n";
 
             ros::Rate loop_rate(1000);
