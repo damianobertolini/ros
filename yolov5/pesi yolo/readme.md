@@ -5,4 +5,4 @@ GazebobestNoResize.pt: weights to use in gazebo simulation trained with images n
 GazebobestNoResizeGray.pt: weights to use in gazebo simulation trained with images in grayscale and not resized <br>
 Realbest.pt: weights to use in real world scenario trained with images not resized<br>
 
-For gazebo simulation actual best weights are GazebobestNoResize.pt
+For gazebo simulation actual best weights are GazebobestNoResizeGray.pt
