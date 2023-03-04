@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "ros/ros.h"
 
 #include "std_msgs/String.h"
@@ -270,6 +271,8 @@ int main(int argc, char ** argv) {
     return 0;
 }
 =======
+=======
+>>>>>>> 57419a286974074cac4a03c6d4a176a21e9696c6
 
 #include "ros/ros.h"
 
@@ -622,4 +625,7 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
+<<<<<<< HEAD
+>>>>>>> 57419a286974074cac4a03c6d4a176a21e9696c6
+=======
 >>>>>>> 57419a286974074cac4a03c6d4a176a21e9696c6
