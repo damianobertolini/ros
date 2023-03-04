@@ -18,7 +18,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
-            <uri>/home/user/ros_ws/src/locosim/models/X1-Y4-Z2.stl</uri>
+            <uri>/home/student/ros_ws/src/locosim/models/X1-Y2-Z2.stl</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>
@@ -39,7 +39,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
-            <uri>/home/user/ros_ws/src/locosim/models/X1-Y4-Z2.stl</uri>
+            <uri>/home/student/ros_ws/src/locosim/models/X1-Y2-Z2.stl</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>

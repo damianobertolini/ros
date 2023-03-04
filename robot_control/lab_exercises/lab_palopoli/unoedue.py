@@ -30,9 +30,9 @@ import math
 from imutils import contours as imcontours
 
 # custom created messages
-from messages.msg import Pointxyz
-from messages.msg import Block
-from messages.msg import BlockList
+from my_vision_messages.msg import Pointxyz
+from my_vision_messages.msg import Block
+from my_vision_messages.msg import BlockList
 
 
 # esegue yolo detect.py su immagine specificata nel path e da in output immagini trovate e ritagliate
@@ -157,6 +157,37 @@ def process_image(image):
         new_block_index = [i[0] for i in sorted_conf if i[1] == conf]
 
         block_list.blocks.insert(new_block_index[0], block)
+
+
+
+        #-----------------------------------------------------------------------------------
+
+
+        w_R_c = np.matrix([[0., - 0.49948, 0.86632], [-1., 0., 0.], [-0., - 0.86632, - 0.49948]])
+        w_c = np.array([-0.9, 0.24, -0.35])
+        base_offset = np.array([0.5,  0.35, 1.75])
+
+
+        real_coord_x = real_coord_x
+        real_coord_y = real_coord_y
+
+        points_list = calculate_depth(real_coord_x,real_coord_y)
+
+        print("-----------------------------------")
+        print("Data Optical frame: ", points_list)
+        pointW = np.dot(w_R_c,points_list[0]) + w_c + base_offset
+        print("Data World frame: ", pointW)
+        print("-----------------------------------")
+        robo=np.array([np.squeeze(np.asarray(pointW))[0],np.squeeze(np.asarray(pointW))[1],np.squeeze(np.asarray(pointW))[2]])
+        robo[0]=robo[0]-0.5
+        robo[1]=0.195-(((robo[1]-0.155)/0.739)*0.645)
+        print("Data robot coord: ", robo)
+        print("-----------------------------------")
+
+
+
+        #-------------------------------------------------------------------------------------
+
 
         # when finished publish result but before sort BlockList by confidence
     global res_pub

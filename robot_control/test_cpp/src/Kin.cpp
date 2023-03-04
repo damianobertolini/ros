@@ -8,14 +8,13 @@
 #include "Helper.cpp"
 #include <fstream>
 
-//using namespace pinocchio;gf
+//using namespace pinocchio;
 using namespace std;
 
 
 #ifndef MODEL_PATH
   #define MODEL_PATH "~/ros_ws/src/robo/ros/robot_urdf/generated_urdf/ur5.urdf"
 #endif
-
 
 class Kin {
    
@@ -43,7 +42,7 @@ class Kin {
         Eigen::Matrix4d T50m;
         Eigen::Matrix4d T60m;
         Eigen::MatrixXd J;
-        int ik_index=0;
+        static inline int ik_index=7;
 
 
         Kin() {
@@ -207,22 +206,37 @@ class Kin {
         return J;
     }
 
-    int eval_ik_index(Eigen::Vector < double, 6 > th){
-
-        compute_fc(th);
+    int eval_ik_index(Eigen::Vector < double, 6 > j_now){
+        Helper h;
+        
+        j_now = h.constrainAngle180(j_now);
+        //cout << "joint attuale pre wrap: " << j_now << endl;
+        compute_fc(j_now);
         Eigen::Vector < double, 6 > pr_i = get_pr_now();
         Eigen::Vector < double, 6 > tmp;
+
+        //cout << "pose end effector : " << pr_i<< endl;
+
         double delta=0;
-
         std::vector<Eigen::Vector < double, 6 >> ik = compute_ik(pr_i);
-
+        //cout << "joint ik pre wrap: \n";
+        for(int i=0; i<ik.size();i++){
+            //cout << i << ")\n";
+            for(int j=0; j< 6; j++){
+                //cout << ik[i](j) << ",";
+            }
+            //cout << "\n";
+        }
         Eigen::Vector < double, 8 > delta_vec;
-
+        //cout << "-----------------------------------------";
         for(int i=0; i< ik.size(); i++){
             delta =0;
+            ik[i] = h.constrainAngle(ik[i]);//devo wrappare tutti e 2 altrimenti sono sfasati
             for(int j=0; j< 6; j++){
-                delta+=abs(ik[i](j)-pr_i(j));
+                delta+=h.dist_constrain(std::abs(h.constrainAngle(ik[i](j))-j_now(j)));
+                //cout << "\n"  << h.constrainAngle(ik[i](j))  << " - " << j_now(j) << "=" << h.dist_constrain(std::abs(h.constrainAngle(ik[i](j))-j_now(j)));
             }
+            //cout << "\n\n";
             delta_vec(i)=delta;
         }
         int index=0;
@@ -235,10 +249,26 @@ class Kin {
             }
         }
 
-        ik_index = index;
+        Kin::ik_index = index;
+
+        //cout << "joint attuale: " << j_now << endl;
+
+        //cout << "joint ik: " << ik[index] << endl;
         
         cout << "errore minimo: " << min << "  a i: " << index <<  endl;
-        
+
+        //cout << "tutti gli errori: " << delta_vec << endl;
+
+        //cout << "tutte le config: " << endl;
+        /*
+        for(int i=0; i<ik.size();i++){
+            cout << i << ")\n";
+            for(int j=0; j< 6; j++){
+                cout << ik[i](j) << ",";
+            }
+            cout << "\n";
+        }
+        */
         return ik_index;
     }
 
@@ -328,8 +358,12 @@ class Kin {
 
     std::vector<Eigen::Vector < double, 6 >> p2p(Eigen::Vector < double, 6 > pr_i, Eigen::Vector < double, 6 > pr_f, int steps = 3000, double minT = 0){
         
-        Eigen::Vector < double, 6 > q_i = compute_ik(pr_i)[ik_index];
-        Eigen::Vector < double, 6 > q_f = compute_ik(pr_f)[ik_index];
+        Eigen::Vector < double, 6 > q_i = compute_ik(pr_i)[Kin::ik_index];
+        Eigen::Vector < double, 6 > q_f = compute_ik(pr_f)[Kin::ik_index];
+
+        cout << "\n\t(kin p2p) da joints: " << q_i;
+        cout << "\n\t(kin p2p) a  joints: " << q_f << endl;;
+
         Eigen::Matrix4d M;
         std::vector<Eigen::Vector < double, 6 >> path;
         //double minT = 0;
@@ -730,13 +764,16 @@ class Kin {
         return (rpy_f - rpy_i) / steps;
     }
 
-    Eigen::Vector3d rotm2eul(Eigen::Matrix4d R){//da matrice a rpy
+    Eigen::Vector3d rotm2eul(Eigen::Matrix4d R){//da matrice a rpy zyx
         Eigen::Vector3d eul;
-
+        /*
         double phi = atan2(R.coeff(1,0), R.coeff(0,0));
         double theta = atan2(-R.coeff(2,0), sqrt(pow(R.coeff(2,1),2) + pow(R.coeff(2,2),2) ));
         double psi = atan2(R.coeff(2,1), R.coeff(2,2));
-       
+        */
+        double psi = atan2(R.coeff(1,0), R.coeff(0,0));
+        double theta = atan2(-R.coeff(2,0), sqrt(pow(R.coeff(2,1),2) + pow(R.coeff(2,2),2) ));
+        double phi = atan2(R.coeff(2,1), R.coeff(2,2));
         //unit test should return roll = 0.5 pitch = 0.2  yaw = 0.3
         //rot2eul(np.array([ [0.9363,   -0.1684,    0.3082], [0.2896 ,   0.8665  , -0.4065], [-0.1987 ,   0.4699  ,  0.8601]]))    
         
@@ -768,14 +805,6 @@ class Kin {
         if(d!=d)
             return 0;
         return d;
-    }
-
-    Eigen::Vector3d cam_to_table(Eigen::Vector3d camera){
-        //camera x y depth
-        Eigen::Vector3d table;
-
-        return table;
-
     }
 
 
@@ -852,13 +881,14 @@ class Kin {
 
         matrix.conservativeResize(numRows,numCols);
     }
-    int wrap(Eigen::Vector3d& v){//5 secondi default
+    int wrap(Eigen::Vector3d& v){
         for(int i=0; i<3;i++){
             if (v(i) > M_PI) 
                 v(i) = (2*M_PI - v(i));
         }       
         return 0;    
     }
+    
 
     private:
         Eigen::Matrix4d T10f(double th1) {

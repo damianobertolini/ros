@@ -53,9 +53,9 @@ int write_at_line(int n_block, int line_number)
       for(int i = 0; i < n_block; i++)
       {
           int block_num = randomInt(0,11);
-          float x = randomFloat(0.3, 0.6);
-          float y = randomFloat(0.3, 0.6);
-          float z = randomFloat(0.3, 0.6);
+          float x = randomFloat(0.1, 0.9);
+          float y = randomFloat(0.2, 0.7);
+          float z = randomFloat(0.92, 1.1);
           float r = randomFloat(0.3, 0.6);
           float p = randomFloat(0.3, 0.6);
           float ya = randomFloat(0.3, 0.6);

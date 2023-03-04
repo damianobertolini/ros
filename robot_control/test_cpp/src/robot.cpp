@@ -95,13 +95,13 @@ class Robot{
             //ros::Subscriber sub = n.subscribe("chatter", 10, robot_msg_callback);
             ros::Subscriber sub_js = n.subscribe("/ur5/joint_states", 1, js_callback);
 
-            cout << "start spinning " << endl;
-
-            ros::spin();
-            
-            
-            cout << "done spinning " << endl;
+            cout << "start spinning robot" << endl;
+            ros::MultiThreadedSpinner spinner(2);
+            spinner.spin();
+            cout << "done spinning robot" << endl;
         }
+
+        
 
         int publish(Eigen::Vector < double, 6 > th, bool fill = true, double gripper = 0){
             
@@ -123,7 +123,6 @@ class Robot{
             //f64j.data.push_back(gripper);
             
             //per soft gripper
-
 
             for(int i=0; i< Robot::n_grip;i++){ //pos 1 2 (3)
                 //f64j.data.insert ( std::next(f64j.data.begin()) , gripper );//posizione 2
@@ -204,7 +203,7 @@ class Robot{
         }
         */
 
-        float move_to(Eigen::Vector < double, 6 > pr_f, int steps = 3000, float k_coeff=0.01, int fix=true){
+        float move_to(Eigen::Vector < double, 6 > pr_f, int steps = 3000, float k_coeff=0.01, int fix=false){
             Helper help;
             Eigen::MatrixXd k = Eigen::MatrixXd::Identity(6,6) * k_coeff;
             sensor_msgs::JointState j_now = joint;
@@ -215,6 +214,7 @@ class Robot{
 
             //help.fill_pr_i_f(pr_i,pr_f);//prendo il punto finale
             Eigen::Vector < double, 6 > q = j_to_q(j_now);//punto iniziale
+            //q = help.constrainAngle180(q);//180-180
             
             kin.compute_fc(q);
             pr_i=kin.get_pr_now();
@@ -231,7 +231,7 @@ class Robot{
             cout << "moving from: " << pr_i << endl << endl;
             cout << "to: " << pr_f << endl << endl;
 
-            vector<Eigen::Vector < double, 6 >> path_theory = kin.fillpath(q,pr_f, steps);
+            //vector<Eigen::Vector < double, 6 >> path_theory = kin.fillpath(q,pr_f, steps);
             //vector<Eigen::Vector < double, 6 >> path = kin.da_a(path_theory,q,k,steps);
             vector<Eigen::Vector < double, 6 >> path = kin.p2p(pr_i,pr_f,steps);
             /*
@@ -241,19 +241,20 @@ class Robot{
             cout << "path[0]" << path[0] << endl;
             cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             */
-            /*
             ofstream myfile;
+            /*
+            
             myfile.open ("path_p_theo.txt");
             for (Eigen::Vector < double, 6 > i: path_theory)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
             */
-            /*
-            myfile.open ("path_q_real.txt");
+            
+            myfile.open ("path.txt");
             for (Eigen::Vector < double, 6 > i: path)
                     myfile << i(0)<< "," <<i(1)<< "," <<i(2)<< "," <<i(3)<< "," <<i(4)<< "," <<i(5)<< "\n";
             myfile.close();
-            */
+            
             //cout << "\npath dim: "<< path.size()<<"\n";
 
             ros::Rate loop_rate(1000);
@@ -367,9 +368,7 @@ class Robot{
 
 //std_msgs::String Robot::msg = new std_msgs::String();
 
-int close_gripper(){
-    return 0;
-}
+
 
 
 void robot_msg_callback(const std_msgs::String::ConstPtr& message){

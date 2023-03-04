@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "Eigen/Eigen/Dense"
+#include <Eigen/Eigen/Dense>
 #include "Helper.cpp"
 #include <iostream>
 #include <fstream>
@@ -22,29 +22,25 @@ int main(int argc, char ** argv) {
     Kin kin;
     
     Eigen::Vector <double, 6> pos;
-    pos << -0.165687,
--0.120752,
- 0.940965,
-  2.37135,
--0.756831,
- -2.64711;
-    Eigen::Vector <double, 6> pos2;
-    pos2 << 0.5, 0.1, 0.5, M_PI/6, M_PI/3, M_PI/4;
-    Eigen::Vector <double, 6> pos3 = kin.compute_ik(pos)[0];
-    Eigen::Matrix3d rotm=kin.eul2rotXYZ(kin.pr_to_r(pos));
-    cout << "xyz: \n" << rotm <<  endl ;
+    pos << -0.42,
+        -0.07,
+        0.5,
+        0,
+        0,
+        0;
 
-    rotm=kin.eul2rotZYX(kin.pr_to_r(pos));
-    cout << "zyx: \n" <<  rotm <<  endl ;
+    //Eigen::Vector <double, 6> pos2;
+    //pos2 << 0.5, 0.1, 0.5, M_PI/6, M_PI/3, M_PI/4;
+    //Eigen::Vector <double, 6> pos3 = kin.compute_ik(pos)[0];
+    //Eigen::Matrix3d rotm=kin.eul2rotXYZ(kin.pr_to_r(pos));
+    //cout << "xyz: \n" << rotm <<  endl ;
 
-    cout << "\n------------------------------------\n";
+    //rotm=kin.eul2rotZYX(kin.pr_to_r(pos));
+    //cout << "zyx: \n" <<  rotm <<  endl ;
+    //cout << "\n------------------------------------\n";
 
-    pos3 = kin.compute_ik(pos)[0];
+    std::vector<Eigen::Vector < double, 6 >> ik = kin.compute_ik(pos);
     //vector<Eigen::Vector < double, 6 >> ik = kin.compute_ik(pos);
-    cout << "pos3:" << pos3;
-    cout << "\n------------------------------------\n";
-    cout << "\n------------------------------------\n";
-    cout << "\n------------------------------------\n";
     /*
     std::vector<Eigen::Vector < double, 6 >> p2p = kin.p2p(pos,pos2,30);
 
@@ -52,49 +48,56 @@ int main(int argc, char ** argv) {
         cout << "\n"  << i << ") " << p2p[i] << endl << endl;
     }
     */
+    /*
+    cout << "ik for :" << pos << endl;
+
+    for(int i=0; i<ik.size();i++){
+        cout << i << ")\n";
+        for(int j=0; j< 6; j++){
+            cout << ik[i](j) << ",";
+        }
+        cout << "\n";
+    }
+
+    Eigen::Vector <double, 6> pos2;
+    pos2 << -0.42,
+        -0.07,
+        15,
+        17,
+        M_PI*5,
+        -86;
+    Helper h;
+
+    
+    Eigen::Vector <double, 6> pos3;
+    pos3 <<  -0.3200020652135178,-0.7800190541406344,-2.560051202291631,    -1.6300324485169746, -1.5700321358755218, 3.4900689818455577;
+    
+
+    cout << "angolo: " << pos3 <<  endl;
+
+    cout << "\nhelper wrapper: " << h.constrainAngle(pos3) << endl;
+
+    cout << "\nhelper wrapper1 : " << h.constrainAngle180(pos3) << endl;
+    cout << "\nfine";
 
 
+    
+    kin.compute_fc(pos3);
+    cout << "pos finale: " << kin.get_pr_now();
+    */
 
-    cout << "\n------------------------------------\n";
+    Eigen::Vector <double, 6> pos_j;
+    pos_j <<  -0.3200020652135178,-0.7800190541406344,-2.560051202291631,    -1.6300324485169746, -1.5700321358755218, 3.4900689818455577;
+    kin.compute_fc(pos_j);
+    Eigen::Matrix4d rotm= kin.get_T0e();
+    Eigen::Vector3d eul= kin.rotm2eul(rotm);
 
-    Eigen::Vector <double , 6> A = Eigen::Vector <double , 6> (0, -0.425, -0.3922, 0, 0, 0);//distanze su A
-
-
-    double p41xz_1 = 0.930377;
-
-    double p41xz_2 = 0.765861;
-
-    double p41xz_3 = 0.892802;
-
-    double p41xz_4 = 0.809351;
-
-
-    double th3_1 = real(acos((pow(p41xz_1,2)-pow(A(1),2)-pow(A(2),2))/(2*A(1)*A(2))));
-    double th3_2 = real(acos((pow(p41xz_2,2)-pow(A(1),2)-pow(A(2),2))/(2*A(1)*A(2))));
-    double th3_3 = real(acos((pow(p41xz_3,2)-pow(A(1),2)-pow(A(2),2))/(2*A(1)*A(2))));
-    double th3_4 = real(acos((pow(p41xz_4,2)-pow(A(1),2)-pow(A(2),2))/(2*A(1)*A(2))));
-
-    cout << "th3_1 : " << th3_1 << endl;
-    cout << "p41xz_1 " << p41xz_1 <<  endl << endl;
-    cout << "th3_2 : " << th3_2 << endl;
-    cout << "p41xz_2 " << p41xz_2 <<  endl<< endl;
-    cout << "th3_3 : " << th3_3 << endl;
-    cout << "p41xz_3 " << p41xz_3 <<  endl<< endl;
-    cout << "th3_4 : " << th3_4 << endl;
-    cout << "p41xz_4 " << p41xz_4 <<  endl<< endl;
-
-    cout << "\n------------------------------------\n";
-
-    double tmp1 = (pow(p41xz_1,2)-pow(A(1),2)-pow(A(2),2))/(2*A(1)*A(2));
-
-    cout << tmp1 <<  endl  << endl;
-
-    cout << "\nacos tmp1: " << kin.safe_acos(tmp1);
-
-    cout << "\nacos -tmp1: " << kin.safe_acos(-tmp1);
-
-    cout << "\natan2(-12,0) " << atan2(-12,0);
-
+    cout << "\n\tjoints\n" << pos_j;
+    cout << "\n\tpr_i: \n" << kin.get_pr_now();
+    cout << "\n\trot matrix: \n" << rotm;
+    cout << "\n\trotm 2 eul xyz:\n" << eul;
+    cout << "\n\teul to xyz:\n" << kin.eul2rotXYZ(eul);
+    cout << "\n\teul to zyx:\n" << kin.eul2rotZYX(eul);
 
 
     return 0;
