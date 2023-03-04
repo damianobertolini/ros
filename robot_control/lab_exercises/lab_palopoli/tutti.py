@@ -181,7 +181,7 @@ def canny_img(img, aperture_size, name):
 
     cannied_img = cv2.Canny(img_gray, 50, 150, apertureSize=aperture_size, L2gradient=True)
 
-    cv2.imwrite(f'aa.jpg', cannied_img)
+    # cv2.imwrite(f'aa.jpg', cannied_img)
 
     return cannied_img
 
@@ -289,7 +289,7 @@ def experimental_detect(original_img, img_centre, name, no_blur=False, redone_ca
         # display that image
         # cv2.imshow('GFG', cimg)
 
-        cv2.imwrite(f'bb.jpg', cimg)
+        # cv2.imwrite(f'bb.jpg', cimg)
 
     except Exception as e:
         if redone_canny:

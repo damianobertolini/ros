@@ -176,7 +176,7 @@ def canny_img(img, aperture_size, name):
 
     cannied_img = cv2.Canny(img_gray, 50, 150, apertureSize=aperture_size, L2gradient=True)
 
-    cv2.imwrite(f'mio_cannied.jpg', cannied_img)
+    #cv2.imwrite(f'mio_cannied.jpg', cannied_img)
 
     return cannied_img
 
