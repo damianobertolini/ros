@@ -64,7 +64,7 @@ def process_image(image):
             result_dict.remove(to_del)
 
     block_list = BlockList()
-    block_list_confs = []
+    block_list_depths = []
 
     # main function start for every piece
     for detected in result_dict:
@@ -156,15 +156,15 @@ def process_image(image):
         block.up_dw_stand_lean = final_incl
         block.confidence = conf
 
-        # sort block list based on fifth component (confidence)
-        block_list_confs.append(conf)
+        # sort block list based on z component (depth)
+        block_list_depths.append(center_depth[0][2])
 
-        sorted_conf = sorted(enumerate(block_list_confs), key=lambda conf_num: conf_num[1])
-        new_block_index = [i[0] for i in sorted_conf if i[1] == conf]
+        block_list_depths.sort(reverse=False)
+        new_block_index = [i[0] for i in enumerate(block_list_depths) if i[1] == center_depth[0][2]]
 
         block_list.blocks.insert(new_block_index[0], block)
 
-    # when finished publish result but before sort BlockList by confidence
+    # when finished publish result but before sort BlockList by depth
     global res_pub
 
     res_pub.publish(block_list.blocks)
