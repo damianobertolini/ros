@@ -159,7 +159,7 @@ def process_image(image):
         # sort block list based on z component (depth)
         block_list_depths.append(center_depth[0][2])
 
-        block_list_depths.sort(reverse=False)
+        block_list_depths.sort(reverse=True)
         new_block_index = [i[0] for i in enumerate(block_list_depths) if i[1] == center_depth[0][2]]
 
         block_list.blocks.insert(new_block_index[0], block)
