@@ -1,0 +1,88 @@
+
+    std::vector<Eigen::Vector < double, 6 >> compute_ik(Eigen::Vector3d p_f,Eigen::Vector3d rpy_f, Eigen::Vector < double, 6 > th0, const int steps=5000, bool print_ = false){
+                                        //posizione finale         orientazione finale                    posizione attuale          passi
+
+        //base_controllers/utils/kin_dyn_utils.py
+        //base_controllers/utils/math_tools.py
+
+        //trovo wrist pos
+
+       //calcolo le velocità
+       //uso velocità lineare
+        //compute_fc(th0);//carico vettori rotazione
+        Th = th0;
+        //Eigen::Vector3d rpy_f;
+
+        std::cout << "computing dik \n" ;
+
+        compute_fc(th0);
+
+        Eigen::Vector3d p_i = get_ee_p();
+        Eigen::Vector3d vel = lin_vel(p_i,p_f, steps);
+
+        if(print_)
+            std::cout << "vel:" << vel << "\n";
+
+        compute_fc(th0);//carico le matrici con la posizione iniziale
+
+        Eigen::Vector3d rot = lin_rot(rotm2eul(T0e),rpy_f, steps);
+        Eigen::Vector < double, 6 > q_temp = Th;
+
+        Eigen::Vector < double, 6 > qkdot;
+        Eigen::Vector < double, 6 > qk1;
+        Eigen::Vector < double, 6 > tmp;
+
+        std::cout << "builing path \n" ;
+
+        std::vector<Eigen::Vector < double, 6 >> path; //vettore di posizioni
+
+        //path.resize(steps);//serie di posizioni di joints     
+
+        //path.push_back(tmp);
+        // tmp
+
+        compute_J(q_temp);//carica anche matrici di rotazione
+
+        //std::cout << "normal j: \n" << J << std::endl;
+        //Eigen::Matrix<double, 6, 4> J_inv = J.inverse();
+        //std::cout << "inverse j: \n" << J.inverse() << std::endl;
+
+
+        //std::cout << "computing for dik \n" ;
+
+        /*
+        
+        ve = @(t) [-0.2*omega*sin(omega*t); 0; 0.2*omega*cos(omega*t)]
+        
+        */
+        
+
+        for(int i =0; i < steps; i++){
+            J = compute_J(q_temp); 
+            //J =  geo2anJ(J, T0e);
+            //devo cambiare jacobiano d ageometrico a analitico
+            //Eigen::Matrix<double, 6, 4> J_inv = J.inverse();
+
+            //vel << 0.02,0.03,0.04;
+            rot << 0,0,0;
+
+            tmp << vel, rot;//ve, stack di velocita' ee e rotazione
+            //std::cout << "inverto\n";
+            qkdot = J.inverse()*tmp;
+            //std::cout << "invertito\n";
+            qk1 = q_temp + qkdot;//1ms
+            path.push_back(qk1);
+            q_temp = qk1;
+
+            
+            if(print_){
+                std::cout << "J: \n" << J << "\n";
+                //std::cout << "J inv: \n" << J.inverse() << "\n";
+                std::cout << "ve: \n" << tmp << "\n";
+                std::cout << "qkdot: \n" << qkdot << "\n";
+                std::cout << "qk1: \n" << qk1 << "\n";                
+
+            }
+            
+
+        }

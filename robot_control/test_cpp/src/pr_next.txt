@@ -1,0 +1,19 @@
+0.3
+-0.25
+0.7
+0
+0
+0
+
+pos base ur5
+
+0.151832
+-0.190828
+0.455001
+ -1.55317
+0.0877281w
+-0.242252
+
+destra sinistra
+avanti indietro
+su giu

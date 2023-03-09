@@ -1,0 +1,693 @@
+<?xml version="1.0"?>
+
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="solo">
+
+    <!-- Things that are needed only for Gazebo (not the physical robot). These include sensor and controller plugin specifications -->
+    <xacro:include filename="$(find starbot_description)/urdfs/leg.transmission.xacro"/>
+    <xacro:include filename="$(find starbot_description)/urdfs/leg.gazebo.xacro"/>
+    <xacro:include filename="$(find starbot_description)/urdfs/common.xacro"/>
+
+    <!-- This macro has for purpose to define a leg -->
+    <xacro:macro name="leg" params="name parent is_front is_right robot_name">
+
+        <!-- Starbot 1.0 -->
+
+        <!--BS_JOINT: Joint between the body and the shoulder -->
+        <joint name="${name}_bs_joint" type="revolute">
+            <parent link="${parent}"/>
+            <child link="${name}_shoulder"/>
+
+            <!-- limit and placement of the joint -->
+            <xacro:if value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LF_SHOULDER_JOINT -->
+                    <axis xyz="1 0 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 ${SHOULDER_pos}  0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RF_SHOULDER_JOINT -->
+                    <axis xyz="0 1 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="${SHOULDER_pos} 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:if>
+            <xacro:unless value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LH_SHOULDER_JOINT -->
+                    <axis xyz="0 -1 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="-${SHOULDER_pos} 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RH_UPPER_LEG_JOINT -->
+                    <axis xyz="-1 0 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 -${SHOULDER_pos} 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:unless>
+
+            <!-- pybullet simulation parameters -->
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <!-- SHOULDER ASSEMBLY -->
+        <link name="${name}_shoulder">
+            <!-- create a dummy shoulder_assembly link to join the two joints -->
+            <!--VISUAL-->
+            <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF SHOULDER -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/shoulder_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RF SHOULDER-->
+                    <geometry>
+                        <mesh filename="package://starbot_description/meshes/stl/shoulder_x.stl"/>
+                    </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH SHOULDER -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/shoulder_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH SHOULDER -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/shoulder_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+                <material name="orange"/>
+            </visual>
+
+      
+
+            <!--INERTIAL -->
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <mass value="0.0001"/>
+                <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+            </inertial>
+        </link>
+
+
+        <!--UPPER LEG JOINT-->
+
+        <joint name="${name}_upper_leg_joint" type="revolute">
+            <parent link="${name}_shoulder"/>
+            <child link="${name}_upperleg"/>
+
+            <!-- joints rotates around the y-axis -->
+
+            <!-- limit and placement of the joint -->
+            <xacro:if value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LF_UPPER_LEG_JOINT -->
+                    <axis xyz="0 0 1"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RF_UPPER_LEG_JOINT -->
+                    <axis xyz="0 0 1"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:if>
+            <xacro:unless value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LH_UPPER_LEG_JOINT -->
+                    <axis xyz="0 0 1"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RH_UPPER_LEG_JOINT -->
+                    <axis xyz="0 0 1"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT}" upper="${REV_LIMIT}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:unless>
+
+            <!-- pybullet simulation parameters -->
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <!-- UPPER LEG ASSEMBLY -->
+        <link name="${name}_upperleg">
+            <!--VISUAL-->
+            <visual>
+
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+			<!-- LF UPPER_LEG -->
+			<origin xyz="0 ${UPPER_LEG_pos} 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+			<!-- RF UPPER_LEG-->
+			<origin xyz="${UPPER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_x.stl"/>
+                        </geometry>
+                        </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+			<!-- LH UPPER_LEG -->
+			<origin xyz="-${UPPER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+		        <!-- RH UPPER_LEG -->
+		        <origin xyz="0 -${UPPER_LEG_pos} 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+                <material name="orange"/>
+            </visual>
+
+            <!--COLLISION-->
+            <!--<collision>
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        &lt;!&ndash; LF UPPER_LEG &ndash;&gt;
+			            <origin xyz="0 ${UPPER_LEG_pos} 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_y.stl" />
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        &lt;!&ndash; RF UPPER_LEG &ndash;&gt;
+       			        <origin xyz="${UPPER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_x.stl" />
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        &lt;!&ndash; LH UPPER_LEG &ndash;&gt;
+			            <origin xyz="-${UPPER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        &lt;!&ndash; RH UPPER_LEG&ndash;&gt;
+			            <origin xyz="0 -${UPPER_LEG_pos} 0" rpy="0 0 0" />
+
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/upper_leg_ny.stl"  />
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+            </collision>-->
+
+            <!-- UPPER LEG LINK INERTIAL -->
+            <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF UPPER_LEG -->
+                        <inertial>
+                    		<origin xyz="0 ${CM_XY_UPPER} ${CM_Z_UPPER}" rpy="0 0 1.57"/>
+                    		<mass value="2.3"/>
+                    		<inertia ixx="0.001878" ixy="0" ixz="0" iyy="0.0182" iyz="0" izz="0.0182"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF UPPER_LEG -->
+                        <inertial>
+                    		<origin xyz="${CM_XY_UPPER} 0 ${CM_Z_UPPER}" rpy="0 0 0"/>
+                    		<mass value="2.3"/>
+                    		<inertia ixx="0.001878" ixy="0" ixz="0" iyy="0.0182" iyz="0" izz="0.0182"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH UPPER_LEG -->
+                        <inertial>
+                    		<origin xyz="-${CM_XY_UPPER} 0 ${CM_Z_UPPER}" rpy="0 0 0"/>
+                    		<mass value="2.3"/>
+                    		<inertia ixx="0.001878" ixy="0" ixz="0" iyy="0.0182" iyz="0" izz="0.0182"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH UPPER_LEG-->
+                        <inertial>
+                    		<origin xyz="0 -${CM_XY_UPPER} ${CM_Z_UPPER}" rpy="0 0 1.57"/>
+                    		<mass value="2.3"/>
+                    		<inertia ixx="0.001878" ixy="0" ixz="0" iyy="0.0182" iyz="0" izz="0.0182"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:unless>
+
+        </link>
+
+
+        <!--LOWER LEG JOINT-->
+
+        <joint name="${name}_lower_leg_joint" type="prismatic">
+            <parent link="${name}_upperleg"/>
+            <child link="${name}_lowerleg"/>
+
+            <!-- limit and placement of the joint -->
+            <xacro:if value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LF_LOWER_LEG_JOINT -->
+                    <axis xyz="0 1 0"/>
+                    <limit effort="${MAX_FORCE_LOWERLEG}" lower="${LOWER_LIMIT_PRI}" upper="${UPPER_LIMIT_PRI}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 ${LOWER_LEG_joint_pos} 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <axis xyz="1 0 0"/>
+                    <!-- RF_LOWER_LEG_JOINT -->
+                    <limit effort="${MAX_FORCE_LOWERLEG}" lower="${LOWER_LIMIT_PRI}" upper="${UPPER_LIMIT_PRI}" velocity="${VELOCITY}"/>
+                    <origin xyz="${LOWER_LEG_joint_pos} 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:if>
+            <xacro:unless value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <axis xyz="-1 0 0"/>
+                    <!-- LH_LOWER_LEG_JOINT -->
+                    <limit effort="${MAX_FORCE_LOWERLEG}" lower="${LOWER_LIMIT_PRI}" upper="${UPPER_LIMIT_PRI}" velocity="${VELOCITY}"/>
+                    <origin xyz="-${LOWER_LEG_joint_pos} 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RF_LOWER_LEG_JOINT -->
+                    <axis xyz="0 -1 0"/>
+                    <limit effort="${MAX_FORCE_LOWERLEG}" lower="${LOWER_LIMIT_PRI}" upper="${UPPER_LIMIT_PRI}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 -${LOWER_LEG_joint_pos} 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:unless>
+
+            <!-- pybullet simulation parameters -->
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <!-- LOWER LEG ASSEMBLY -->
+        <link name="${name}_lowerleg">
+            <!--VISUAL-->
+            <visual>
+
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF LOWER_LEG -->
+                        <origin xyz="0 ${LOWER_LEG_pos} 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/lower_leg_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF LOWER_LEG-->
+                        <origin xyz="${LOWER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/lower_leg_x.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH LOWER_LEG -->
+                        <origin xyz="-${LOWER_LEG_pos} 0 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/lower_leg_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH LOWER_LEG -->
+                        <origin xyz="0 -${LOWER_LEG_pos} 0" rpy="0 0 0" />
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/lower_leg_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+                <material name="orange"/>
+            </visual>
+
+            <!--COLLISION-->
+            
+
+            <!-- LOWER LEG LINK INERTIAL -->
+            <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF LOWER_LEG -->
+                        <inertial>
+                    		<origin xyz="0 ${CM_XY_LOWER} ${CM_Z_LOWER}" rpy="0 0 1.57"/>
+                    		<mass value="2.36"/>
+                    		<inertia ixx="0.000639" ixy="0" ixz="0" iyy="0.0126" iyz="0" izz="0.0126"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF LOWER_LEG -->
+                        <inertial>
+                    		<origin xyz="${CM_XY_LOWER} 0 ${CM_Z_LOWER}" rpy="0 0 0"/>
+                    		<mass value="2.36"/>
+                    		<inertia ixx="0.000639" ixy="0" ixz="0" iyy="0.0126" iyz="0" izz="0.0126"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH LOWER_LEG -->
+                        <inertial>
+                    		<origin xyz="-${CM_XY_LOWER} 0 ${CM_Z_LOWER}" rpy="0 0 0"/>
+                    		<mass value="2.36"/>
+                    		<inertia ixx="0.000639" ixy="0" ixz="0" iyy="0.0126" iyz="0" izz="0.0126"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH LOWER_LEG-->
+                        <inertial>
+                    		<origin xyz="0 -${CM_XY_LOWER} ${CM_Z_LOWER}" rpy="0 0 1.57"/>
+                    		<mass value="2.36"/>
+                    		<inertia ixx="0.000639" ixy="0" ixz="0" iyy="0.0126" iyz="0" izz="0.0126"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:unless>
+
+        </link>
+
+        <!--PRE WHEEL JOINT-->
+
+        <joint name="${name}_pre_wheel_joint" type="revolute">
+            <parent link="${name}_lowerleg"/>
+            <child link="${name}_pre_wheel"/>
+
+            <!-- joints rotates around the x-axis (refer to the x-axis align leg) -->
+
+
+            <!-- limit and placement of the joint -->
+            <xacro:if value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LF_PRE_WHEEL_JOINT -->
+                    <axis xyz="0 1 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT_PRE_WHEEL}" upper="${REV_LIMIT_PRE_WHEEL}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 ${PRE_WHEEL_pos} 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <axis xyz="1 0 0"/>
+                    <!-- RF_PRE_WHEEL_JOINT -->
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT_PRE_WHEEL}" upper="${REV_LIMIT_PRE_WHEEL}" velocity="${VELOCITY}"/>
+                    <origin xyz="${PRE_WHEEL_pos} 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:if>
+            <xacro:unless value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <axis xyz="-1 0  0"/>
+                    <!-- LH_PRE_WHEEL_JOINT -->
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT_PRE_WHEEL}" upper="${REV_LIMIT_PRE_WHEEL}" velocity="${VELOCITY}"/>
+                    <origin xyz="-${PRE_WHEEL_pos} 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RF_PRE_WHEEL_JOINT -->
+                    <axis xyz="0  -1 0"/>
+                    <limit effort="${MAX_TORQUE}" lower="-${REV_LIMIT_PRE_WHEEL}" upper="${REV_LIMIT_PRE_WHEEL}" velocity="${VELOCITY}"/>
+                    <origin xyz="0 -${PRE_WHEEL_pos} 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:unless>
+
+            <!-- pybullet simulation parameters -->
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <!-- PRE WHEEL ASSEMBLY -->
+        <link name="${name}_pre_wheel">
+            <!--VISUAL-->
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF PRE_WHEEL -->
+                        <!--we need mesh geometry otherwise strange behaviour happens-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF PRE_WHEEL-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_x.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH PRE_WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH PRE_WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+                <material name="gray"/>
+            </visual>
+
+            <!--COLLISION-->
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF PRE_WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF PRE_WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_x.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH PRE_WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_nx.stl" />
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH PRE_WHEEL-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/joint_wheel_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+            </collision>
+
+            <!-- PRE WHEEL LINK INERTIAL -->
+            <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF PRE_WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="0 ${CM_XY_PRE_WHEEL} ${CM_Z_PRE_WHEEL}" rpy="0 0 1.57"/>
+                    		<mass value="0.66"/>
+                    		<inertia ixx="0.00017674" ixy="0" ixz="0" iyy="0.000358" iyz="0" izz="0.000358"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF PRE_WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="${CM_XY_PRE_WHEEL} 0 ${CM_Z_PRE_WHEEL}" rpy="0 0 0"/>
+                    		<mass value="0.66"/>
+                    		<inertia ixx="0.00017674" ixy="0" ixz="0" iyy="0.000358" iyz="0" izz="0.000358"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH PRE_WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="-${CM_XY_PRE_WHEEL} 0 ${CM_Z_PRE_WHEEL}" rpy="0 0 0"/>
+                    		<mass value="0.66"/>
+                    		<inertia ixx="0.00017674" ixy="0" ixz="0" iyy="0.000358" iyz="0" izz="0.000358"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH PRE_WHEEL_LEG-->
+                        <inertial>
+                    		<origin xyz="0 -${CM_XY_PRE_WHEEL} ${CM_Z_PRE_WHEEL}" rpy="0 0 1.57"/>
+                    		<mass value="0.66"/>
+                    		<inertia ixx="0.00017674" ixy="0" ixz="0" iyy="0.000358" iyz="0" izz="0.000358"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:unless>
+
+        </link>
+
+        <!--WHEEL JOINT-->
+
+        <joint name="${name}_wheel_joint" type="revolute">
+            <parent link="${name}_pre_wheel"/>
+            <child link="${name}_wheel"/>
+
+            <!-- joints rotates around the x-axis (refer to the x-axis align leg) -->
+
+
+            <!-- limit and placement of the joint -->
+            <xacro:if value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <!-- LF_WHEEL_JOINT -->
+                    <axis xyz="1 0 0"/>
+                    <origin xyz="0 ${WHEEL_pos} 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <axis xyz="0 1 0"/>
+                    <!-- RF_WHEEL_JOINT -->
+                    <origin xyz="${WHEEL_pos} 0 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:if>
+            <xacro:unless value="${is_front}">
+                <xacro:unless value="${is_right}">
+                    <axis xyz="0 -1 0"/>
+                    <!-- LH_WHEEL_JOINT -->
+                    <origin xyz="-${WHEEL_pos} 0 0" rpy="0 0 0" />
+                </xacro:unless>
+                <xacro:if value="${is_right}">
+                    <!-- RH_WHEEL_JOINT -->
+                    <axis xyz="-1 0 0"/>
+                    <origin xyz="0 -${WHEEL_pos} 0" rpy="0 0 0" />
+                </xacro:if>
+            </xacro:unless>
+
+            <limit effort="100" lower="-1e10" upper="1e10" velocity="100"/>
+            <!-- pybullet simulation parameters -->
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <!-- WHEEL ASSEMBLY -->
+        <link name="${name}_wheel">
+            <!--VISUAL-->
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF WHEEL -->
+                        <!--we need mesh geometry otherwise strange behaviour happens-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF WHEEL-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_x.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+                <material name="blue"/>
+            </visual>
+
+            <!--COLLISION-->
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LF WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_y.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RF WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_x.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!-- LH WHEEL -->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_nx.stl"/>
+                        </geometry>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!-- RH WHEEL-->
+                        <geometry>
+                            <mesh filename="package://starbot_description/meshes/stl/wheel_ny.stl"/>
+                        </geometry>
+                    </xacro:if>
+                </xacro:unless>
+            </collision>
+
+            <!-- WHEEL LINK INERTIAL -->
+            <xacro:if value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!--LF WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="0 ${CM_XY_WHEEL} ${CM_Z_WHEEL}" rpy="0 0 1.57"/>
+                    		<mass value="1.0"/>
+                    		<inertia ixx="0.00177" ixy="0" ixz="0" iyy="0.00326" iyz="0" izz="0.00177"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!--RF WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="${CM_XY_WHEEL} 0 ${CM_Z_WHEEL}" rpy="0 0 0"/>
+                    		<mass value="1.0"/>
+                    		<inertia ixx="0.00177" ixy="0" ixz="0" iyy="0.00326" iyz="0" izz="0.00177"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:if>
+                <xacro:unless value="${is_front}">
+                    <xacro:unless value="${is_right}">
+                        <!--LH WHEEL_LEG -->
+                        <inertial>
+                    		<origin xyz="-${CM_XY_WHEEL}  0 ${CM_Z_WHEEL}" rpy="0 0 0"/>
+                    		<mass value="1.0"/>
+                    		<inertia ixx="0.00177" ixy="0" ixz="0" iyy="0.00326" iyz="0" izz="0.00177"/>
+                	</inertial>
+                    </xacro:unless>
+                    <xacro:if value="${is_right}">
+                        <!--RH WHEEL_LEG-->
+                        <inertial>
+                    		<origin xyz="0 -${CM_XY_WHEEL} ${CM_Z_WHEEL}" rpy="0 0 1.57"/>
+                    		<mass value="1.0"/>
+                    		<inertia ixx="0.00177" ixy="0" ixz="0" iyy="0.00326" iyz="0" izz="0.00177"/>
+                	</inertial>
+                    </xacro:if>
+                </xacro:unless>
+        </link>
+
+
+        <!-- Extensions -->
+        <xacro:leg_transmission name="${name}"/>
+        <xacro:leg_gazebo name="${name}" robot_name="${robot_name}"/>
+    </xacro:macro>
+</robot>

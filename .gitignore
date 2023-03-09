@@ -1,0 +1,7 @@
+__pycache__/
+*.jpg
+.idea
+a.out
+models/
+yolov5/
+robot_urdf/
