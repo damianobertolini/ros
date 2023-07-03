@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+    <physics type='ode'>
+      <gravity>0 0 -0.1</gravity>
+      <!-- max step size has to be a multiple of the desired task rate-->
+      <max_step_size>0.001</max_step_size> 
+      <real_time_factor>1</real_time_factor>
+    </physics>
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <name>tavolo</name>
+      <uri>model://tavolo</uri>
+      <pose>0.0 0.0 0.0 0 0 0</pose>
+    </include>
+
+
+    <include>
+     <name>block3high</name>
+     <uri>model://block3high</uri>
+     <pose>0.50429 0.33069 0.89000 0.00000 -1.57080 1.55623</pose>
+    </include>
+
+    <include>
+     <name>block3high</name>
+     <uri>model://block3high</uri>
+     <pose>0.56604 0.61688 0.89000 0.00000 -1.57080 1.19242</pose>
+    </include>
+
+    <include>
+     <name>block0high</name>
+     <uri>model://block0high</uri>
+     <pose>0.15382 0.59777 0.89000 0.00000 0.00000 0.54635</pose>
+    </include>
+
+    <include>
+     <name>block9high</name>
+     <uri>model://block9high</uri>
+     <pose>0.37494 0.64812 0.89000 0.00000 1.57080 2.69081</pose>
+    </include>
+
+    <gui>
+     <camera name="gzclient_camera">
+     <pose>1. 3.2 2.2 0. 0.4 -1.75</pose>
+     </camera>
+    </gui>
+
+  </world>
+</sdf>
