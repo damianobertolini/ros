@@ -1,0 +1,11 @@
+Robotics project
+================
+
+Vision module
+---------------------
+
+.. automodule:: vision.visione_lab
+   :members:
+   :undoc-members:
+   :show-inheritance:
+

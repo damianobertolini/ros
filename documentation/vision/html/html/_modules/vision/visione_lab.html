@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vision.visione_lab &mdash; vision 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            vision
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../vision.html">Robotics project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project report</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../report.html">Project report</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">vision</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">vision.visione_lab</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for vision.visione_lab</h1><div class="highlight"><pre>
+<span></span><span class="c1"># various useful libraries</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># for locks</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="c1"># for image manipulation and opencv algorithms</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="c1">#from imutils import contours as imcontours</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+
+<span class="c1"># for Yolo</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="c1"># ROS libraries</span>
+<span class="c1">#import rospy</span>
+<span class="c1">#import ros_numpy</span>
+
+<span class="c1"># default messages</span>
+<span class="c1">#from sensor_msgs import point_cloud2</span>
+<span class="c1">#from sensor_msgs.msg import Image</span>
+<span class="c1">#from sensor_msgs.msg import PointCloud2</span>
+
+<span class="c1"># custom created messages</span>
+<span class="c1">#from my_vision_messages.msg import Pointxyz</span>
+<span class="c1">#from my_vision_messages.msg import Block</span>
+<span class="c1">#from my_vision_messages.msg import BlockList</span>
+
+
+<div class="viewcode-block" id="process_image"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.process_image">[docs]</a><span class="k">def</span> <span class="nf">process_image</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Processes image executing the YOLOv5 detection on the specified image and gives as output the detected images cropped around the bounding boxes.</span>
+<span class="sd">    </span>
+<span class="sd">    The process is divided in steps:</span>
+
+<span class="sd">    1. Resize the image in order to adapt it to YoloV5&#39;s training images resolution</span>
+<span class="sd">    2. Execute YoloV5 image detection identifying blocks&#39; classes and bounding boxes</span>
+<span class="sd">    3. Remove blocks which are too close one to each other based on their confidence</span>
+<span class="sd">    4. For each identified block:</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    image : numpy array</span>
+<span class="sd">        The image to execute the detection on</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Output</span>
+<span class="sd">    ------</span>
+<span class="sd">    block_list: BlockList()</span>
+<span class="sd">        List of all detected blocks. Each block is identified by class, 3D position from the camera view, 3D position from the world frame, rotation angle,</span>
+<span class="sd">        confidence of the block taken from Yolo, inclination based on position of circles identified in the block,</span>
+<span class="sd">        final_incl (real 3D position based on Principal Component Analysis of the Point Cloud)cropped around their bounding boxes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># loading the model</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;yolov5/&quot;</span><span class="p">,</span> <span class="s1">&#39;custom&#39;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;yolov5/pesi_yolo/Realbest90.pt&quot;</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+
+    <span class="c1"># resize image for yolo detection (from 960x540 to 640x360)</span>
+    <span class="n">image_resized</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="mi">640</span><span class="p">,</span> <span class="mi">360</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_AREA</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">conf</span> <span class="o">=</span> <span class="mf">0.6</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">image_resized</span><span class="p">)</span>  <span class="c1"># executing YoloV5</span>
+
+    <span class="n">result_dict</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">pandas</span><span class="p">()</span><span class="o">.</span><span class="n">xyxy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;result dict:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">result_dict</span><span class="p">)</span>
+
+    <span class="n">to_delete</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># delete close predictions based on greater confidence</span>
+    <span class="k">for</span> <span class="n">det1</span> <span class="ow">in</span> <span class="n">result_dict</span><span class="p">:</span>
+        <span class="n">x11</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det1</span><span class="p">[</span><span class="s1">&#39;xmin&#39;</span><span class="p">])</span>
+        <span class="n">y11</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det1</span><span class="p">[</span><span class="s1">&#39;ymin&#39;</span><span class="p">])</span>
+        <span class="n">x21</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det1</span><span class="p">[</span><span class="s1">&#39;xmax&#39;</span><span class="p">])</span>
+        <span class="n">y21</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det1</span><span class="p">[</span><span class="s1">&#39;ymax&#39;</span><span class="p">])</span>
+        <span class="n">conf1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det1</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">det2</span> <span class="ow">in</span> <span class="n">result_dict</span><span class="p">:</span>
+            <span class="n">x12</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det2</span><span class="p">[</span><span class="s1">&#39;xmin&#39;</span><span class="p">])</span>
+            <span class="n">y12</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det2</span><span class="p">[</span><span class="s1">&#39;ymin&#39;</span><span class="p">])</span>
+            <span class="n">x22</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det2</span><span class="p">[</span><span class="s1">&#39;xmax&#39;</span><span class="p">])</span>
+            <span class="n">y22</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det2</span><span class="p">[</span><span class="s1">&#39;ymax&#39;</span><span class="p">])</span>
+            <span class="n">conf2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">det2</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x11</span> <span class="o">-</span> <span class="n">x12</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y11</span> <span class="o">-</span> <span class="n">y12</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x21</span> <span class="o">-</span> <span class="n">x22</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span>
+                    <span class="n">y21</span> <span class="o">-</span> <span class="n">y22</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>  <span class="c1"># two very near labels</span>
+                <span class="k">if</span> <span class="n">conf1</span> <span class="o">&gt;</span> <span class="n">conf2</span><span class="p">:</span>  <span class="c1"># take the one with best accuracy</span>
+                    <span class="n">to_delete</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conf2</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">to_delete</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conf1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">to_del</span> <span class="ow">in</span> <span class="n">to_delete</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">to_del</span> <span class="ow">in</span> <span class="n">result_dict</span><span class="p">:</span>  <span class="c1"># since the above part is not very efficient it will take every to_del twice</span>
+            <span class="c1"># example: x1.conf &gt; x2.conf, but later in the for loop: x2.conf &lt; x1.conf -&gt; counted twice</span>
+            <span class="n">result_dict</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">to_del</span><span class="p">)</span>
+
+    <span class="n">block_list</span> <span class="o">=</span> <span class="n">BlockList</span><span class="p">()</span>
+    <span class="n">block_list_depths</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># dictionary for converting class numbers to class names provided in the task requirements</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;X1-Y1-Z2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y2-Z2-CHAMFER&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y2-Z2&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y3-Z2&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y4-Z2&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s2">&quot;X2-Y2-Z2&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y2-Z1&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y2-Z2-TWINFILLET&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y3-Z2-FILLET&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="s2">&quot;X1-Y4-Z1&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="s2">&quot;X2-Y2-Z2-FILLET&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># main function start for every piece</span>
+    <span class="k">for</span> <span class="n">detected</span> <span class="ow">in</span> <span class="n">result_dict</span><span class="p">:</span>
+        <span class="c1"># cs = float(detected[&#39;name&#39;])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">detected</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="p">:</span>
+            <span class="n">cs</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cs</span> <span class="o">=</span> <span class="mi">12</span>  <span class="c1"># workaround in case of an unidentified class number</span>
+
+        <span class="n">x1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;xmin&#39;</span><span class="p">])</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;ymin&#39;</span><span class="p">])</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;xmax&#39;</span><span class="p">])</span>
+        <span class="n">y2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;ymax&#39;</span><span class="p">])</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">detected</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">])</span>
+
+        <span class="c1"># check if bounding box is inside table, else discard label</span>
+        <span class="c1"># table_corners=[340//1.5,900//1.5,200//1.5,500//1.5] in 960p</span>
+        <span class="n">table_corners</span> <span class="o">=</span> <span class="p">[</span><span class="mi">730</span><span class="p">,</span> <span class="mi">1380</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">750</span><span class="p">]</span>  <span class="c1"># xxyy</span>
+
+        <span class="c1"># up-scaling original image (interpolation and circles recognition show better results than in 960x540)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="mi">1920</span><span class="p">,</span> <span class="mi">1080</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_AREA</span><span class="p">)</span>
+
+        <span class="c1"># re-scaling bounding box values from 640x360 to new image definition: 1920x1080</span>
+        <span class="n">molt</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">molt</span> <span class="o">*</span> <span class="n">x1</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">molt</span> <span class="o">*</span> <span class="n">x2</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="n">molt</span> <span class="o">*</span> <span class="n">y1</span>
+        <span class="n">y2</span> <span class="o">=</span> <span class="n">molt</span> <span class="o">*</span> <span class="n">y2</span>
+
+        <span class="k">if</span> <span class="n">x1</span> <span class="o">&lt;</span> <span class="n">table_corners</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">x2</span> <span class="o">&gt;</span> <span class="n">table_corners</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">y1</span> <span class="o">&lt;</span> <span class="n">table_corners</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">or</span> <span class="n">y2</span> <span class="o">&gt;</span> <span class="n">table_corners</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="c1"># skipping this block since it is outside the table (false positive)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># cropping the identified block</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">crop_img</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span><span class="p">:</span><span class="nb">int</span><span class="p">(</span><span class="n">y2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span><span class="p">:</span><span class="nb">int</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">crop_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">crop_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+
+        <span class="n">siz</span> <span class="o">=</span> <span class="n">crop_img</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">low_res_mult</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">low_res_crop</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">crop_img</span><span class="p">,</span> <span class="p">(</span><span class="n">siz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="n">low_res_mult</span><span class="p">,</span> <span class="n">siz</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">low_res_mult</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_CUBIC</span><span class="p">)</span>
+
+        <span class="c1"># apply Canny for identifying edges and contours in image</span>
+        <span class="n">cannied_img</span> <span class="o">=</span> <span class="n">canny_img</span><span class="p">(</span><span class="n">low_res_crop</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1">#calculate block&#39;s rotation angle and position</span>
+        <span class="k">global</span> <span class="n">rect_angle</span>
+        <span class="n">rect_center</span><span class="p">,</span> <span class="n">rect_width_height</span><span class="p">,</span> <span class="n">rect_angle</span> <span class="o">=</span> <span class="n">min_area_rect</span><span class="p">(</span><span class="n">cannied_img</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cs</span><span class="p">)),</span> <span class="n">low_res_mult</span><span class="p">)</span>
+
+        <span class="n">rect_center</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="n">rect_width_height</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="n">rect_angle</span> <span class="o">*=</span> <span class="mi">2</span>
+
+        <span class="c1"># return from coordinates in cropped image to coordinates in original image</span>
+        <span class="n">real_coord_x</span><span class="p">,</span> <span class="n">real_coord_y</span> <span class="o">=</span> <span class="n">from_cropped_to_real_world_coord</span><span class="p">(</span><span class="n">rect_center</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+
+        <span class="c1"># calculate inclination based on position of circles identified in the block</span>
+        <span class="n">inclination</span> <span class="o">=</span> <span class="n">experimental_detect</span><span class="p">(</span><span class="n">crop_img</span><span class="p">,</span> <span class="n">rect_center</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cs</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+
+        <span class="c1"># taking values for cropping depth map taken from cloud_registered topic</span>
+        <span class="n">to_crop_depth</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># I want the cropped point cloud to have the minimum between deltax and delta y equal to this value</span>
+        <span class="n">target_to_crop</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="k">if</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">&gt;</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">:</span>
+            <span class="n">value_to_crop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span> <span class="o">-</span> <span class="n">target_to_crop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value_to_crop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">target_to_crop</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># get values which will be used to get the cropped point cloud</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">((</span><span class="n">x1</span> <span class="o">+</span> <span class="n">value_to_crop</span><span class="p">)</span> <span class="o">//</span> <span class="n">molt</span><span class="p">),</span> <span class="nb">int</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">value_to_crop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">molt</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">((</span><span class="n">y1</span> <span class="o">+</span> <span class="n">value_to_crop</span><span class="p">)</span> <span class="o">//</span> <span class="n">molt</span><span class="p">),</span> <span class="nb">int</span><span class="p">((</span><span class="n">y2</span> <span class="o">-</span> <span class="n">value_to_crop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">molt</span><span class="p">)):</span>
+                <span class="n">to_crop_depth</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span>
+
+        <span class="c1"># apply Principal Component Analysis and return the final inclination</span>
+        <span class="n">final_incl</span> <span class="o">=</span> <span class="n">pca</span><span class="p">(</span><span class="n">to_crop_depth</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">final_incl</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># get mean of depths of points around block&#39;s center</span>
+        <span class="n">center_depth</span> <span class="o">=</span> <span class="n">calculate_depth</span><span class="p">(</span><span class="n">real_coord_x</span><span class="p">,</span> <span class="n">real_coord_y</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># 0.5 from 1920x1080 to 960x540 for raw depth</span>
+
+        <span class="c1"># return to original image sizes (find real coordinates of found centre)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------------&quot;</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">Pointxyz</span><span class="p">(</span><span class="n">real_coord_x</span><span class="p">,</span> <span class="n">real_coord_y</span><span class="p">,</span> <span class="n">center_depth</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x:</span><span class="si">{</span><span class="n">real_coord_x</span><span class="si">}</span><span class="s2">,</span><span class="se">\t</span><span class="s2">y:</span><span class="si">{</span><span class="n">real_coord_y</span><span class="si">}</span><span class="s2">, </span><span class="se">\t</span><span class="s2">depth center: </span><span class="si">{</span><span class="n">center_depth</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">w_R_c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span> <span class="mf">0.49948</span><span class="p">,</span> <span class="mf">0.86632</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span> <span class="mf">0.86632</span><span class="p">,</span> <span class="o">-</span> <span class="mf">0.49948</span><span class="p">]])</span>
+
+        <span class="n">base_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.58</span><span class="p">,</span> <span class="mf">0.49</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">])</span>
+
+        <span class="c1"># points_list = calculate_depth(real_coord_x, real_coord_y,1/molt)</span>
+        <span class="n">points_list</span> <span class="o">=</span> <span class="n">calculate_depth</span><span class="p">(</span><span class="n">real_coord_x</span><span class="p">,</span> <span class="n">real_coord_y</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data Optical frame: &quot;</span><span class="p">,</span> <span class="n">points_list</span><span class="p">)</span>
+
+        <span class="c1"># pointW = np.dot(w_R_c, points_list[0]) + w_c + base_offset</span>
+        <span class="n">pointW</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_R_c</span><span class="p">,</span> <span class="n">points_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">base_offset</span>  <span class="c1"># world frame coordinates without the robot</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data World frame: &quot;</span><span class="p">,</span> <span class="n">pointW</span><span class="p">)</span>
+
+        <span class="n">robo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pointW</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pointW</span><span class="p">))[</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pointW</span><span class="p">))[</span><span class="mi">2</span><span class="p">]])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data robot coord: &quot;</span><span class="p">,</span> <span class="n">robo</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------------&quot;</span><span class="p">)</span>
+
+        <span class="c1"># creating a block object and adding it to the list which will be the output of this function</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="n">Block</span><span class="p">()</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">class_number</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cs</span><span class="p">)</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">point</span> <span class="o">=</span> <span class="n">point</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">rot_angle</span> <span class="o">=</span> <span class="n">rect_angle</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">top_btm_l_r</span> <span class="o">=</span> <span class="n">inclination</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">up_dw_stand_lean</span> <span class="o">=</span> <span class="n">final_incl</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">confidence</span> <span class="o">=</span> <span class="n">conf</span>
+        <span class="n">block</span><span class="o">.</span><span class="n">world_point</span> <span class="o">=</span> <span class="n">Pointxyz</span><span class="p">(</span><span class="n">robo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">robo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">robo</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># sort block list based on x component (depth), this will help later to decide which block to pick first</span>
+        <span class="n">block_list_depths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">center_depth</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">block_list_depths</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">new_block_index</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">block_list_depths</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">center_depth</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="n">block_list</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">new_block_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">block</span><span class="p">)</span>
+
+    <span class="c1"># when finished publish result</span>
+    <span class="k">global</span> <span class="n">res_pub</span>
+    <span class="n">res_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">block_list</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;process image end&quot;</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="canny_img"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.canny_img">[docs]</a><span class="k">def</span> <span class="nf">canny_img</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">aperture_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filters the image passes an input through Canny algorithm in order to perform edge detection</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    img : numpy array</span>
+<span class="sd">        The image to execute the detection on</span>
+
+<span class="sd">    aperture_size: Integer</span>
+<span class="sd">        Parameter that represents the size of the kernel for detecting edges</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        image filtered through Canny algorithm</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">img_gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+
+    <span class="n">cannied_img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">Canny</span><span class="p">(</span><span class="n">img_gray</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">apertureSize</span><span class="o">=</span><span class="n">aperture_size</span><span class="p">,</span> <span class="n">L2gradient</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cannied_img</span></div>
+
+
+<div class="viewcode-block" id="min_area_rect"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.min_area_rect">[docs]</a><span class="k">def</span> <span class="nf">min_area_rect</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">low_res_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes the Canny-filtered image, identifies all the contours in it, sorts those contours based on their size, takes the largest contour as the block&#39;s contour.</span>
+<span class="sd">    Then the function &quot;draws&quot; the smallest rectangle that contains that contour and finds therefore the block&#39;s rotation angle. It also outputs the rectangle&#39;s center and 2D-sizes</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    img : numpy array</span>
+<span class="sd">        The image filtered through Canny algorithm</span>
+
+<span class="sd">    name: String</span>
+<span class="sd">        Class of the block</span>
+
+<span class="sd">    low_res_mult: Float</span>
+<span class="sd">        Parameter necessary due to image scaling</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        rect_center (x,y), rectangle width and height, angle of rotation of the block</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ret</span><span class="p">,</span> <span class="n">thresh</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">contours</span><span class="p">,</span> <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span><span class="n">thresh</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># sort found contour in order to take the largest one</span>
+    <span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">imcontours</span><span class="o">.</span><span class="n">sort_contours</span><span class="p">(</span><span class="n">contours</span><span class="p">)</span>  <span class="c1"># not strictly necessary</span>
+    <span class="n">contours</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">cv2</span><span class="o">.</span><span class="n">contourArea</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">contours</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+    <span class="n">cnt</span> <span class="o">=</span> <span class="n">contours</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># take the largest contour</span>
+
+    <span class="n">min_area_rectangle</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">minAreaRect</span><span class="p">(</span><span class="n">cnt</span><span class="p">)</span>   <span class="c1"># find smallest rectangle that contains contour</span>
+
+    <span class="n">min_area_rect_angle</span> <span class="o">=</span> <span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">min_area_rect_width</span> <span class="o">=</span> <span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">low_res_mult</span>
+    <span class="n">min_area_rect_height</span> <span class="o">=</span> <span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">low_res_mult</span>
+
+    <span class="c1"># adjust found angle to world frame&#39;s angle</span>
+    <span class="k">if</span> <span class="n">min_area_rect_width</span> <span class="o">&lt;</span> <span class="n">min_area_rect_height</span><span class="p">:</span>
+        <span class="n">min_area_rect_angle</span> <span class="o">=</span> <span class="n">min_area_rect_angle</span> <span class="o">+</span> <span class="mi">90</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">min_area_rect_angle</span> <span class="o">=</span> <span class="n">min_area_rect_angle</span> <span class="o">+</span> <span class="mi">180</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot; : &quot;</span><span class="p">,</span> <span class="n">min_area_rect_angle</span><span class="p">,</span> <span class="n">min_area_rect_width</span><span class="p">,</span> <span class="n">min_area_rect_height</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">low_res_mult</span><span class="p">,</span> <span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">low_res_mult</span><span class="p">),</span> <span class="n">min_area_rectangle</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">min_area_rect_angle</span></div>
+
+
+<div class="viewcode-block" id="experimental_detect"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.experimental_detect">[docs]</a><span class="k">def</span> <span class="nf">experimental_detect</span><span class="p">(</span><span class="n">original_img</span><span class="p">,</span> <span class="n">img_centre</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">no_blur</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">redone_canny</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Searches for circles in the image passed as input using the cv2.HoughCircles() function, then tries to guess a first inclination based on those circle&#39;s position.</span>
+<span class="sd">    In particular, after finding the circles, it finds the best line that represents all the center of the circles (least squares polynomial fit) and uses its parameters</span>
+<span class="sd">    and the distance between the mean of the circles&#39; centers and the block&#39;s center to determine whether the circles are mainly on top/bottom/right/left of the block.</span>
+<span class="sd">    Since some blocks may have just one circle on (for example) the top-right corner, it returns a list where the first element is the &quot;predominant&quot; direction (easier to be right)</span>
+<span class="sd">    and the second element is the other less dominant one.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    original_img : numpy array</span>
+<span class="sd">        The image cropped which is supposed to contain the block</span>
+
+<span class="sd">    img_centre: Tuple</span>
+<span class="sd">        Center of the rectangle found in the previous functions</span>
+
+<span class="sd">    name: String</span>
+<span class="sd">        Class of the block</span>
+
+<span class="sd">    no_blur: Boolean</span>
+<span class="sd">        Parameter used for deciding whether to apply a blur to the image before recognizing circles. In case no circles are detected at first, we can try removing the blur to make the image more clear</span>
+
+<span class="sd">    redone_canny: Boolean</span>
+<span class="sd">        Parameter that tells whether the detection has already been performed both with blur and without it (also with other improvements in the image quality). If still no circles are found,</span>
+<span class="sd">        then image has a too bad quality or no circles are present. This could mean that the block is standing and pointing away from the camera (its circles cannot be seen by the camera view)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        List containing the two most probable inclination, this can be &quot;top&quot;, &quot;bottom&quot;, &quot;right&quot; or &quot;left&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">original_img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+
+    <span class="c1"># decide whether to apply blur or not. Doing it can remove false positives (works well if image has already a good quality)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">no_blur</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">sigmaX</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">sigmaY</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># parameters that define some ranges where the detected circles&#39; size should be contained (too big circles are unlikely to be the block&#39;s circle, the same applies to circles too close to each other)</span>
+        <span class="n">max_rad_circle</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+
+        <span class="n">variable_min_dist</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">original_img</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="c1"># main function that detects circles in passed image</span>
+        <span class="n">circles</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">HoughCircles</span><span class="p">(</span>
+            <span class="n">img</span><span class="p">,</span>
+            <span class="n">cv2</span><span class="o">.</span><span class="n">HOUGH_GRADIENT</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">,</span>
+            <span class="n">variable_min_dist</span><span class="p">,</span>
+            <span class="n">param1</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+            <span class="n">param2</span><span class="o">=</span><span class="mi">15</span> <span class="k">if</span> <span class="n">redone_canny</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># the less it is the more false positives circles</span>
+            <span class="n">minRadius</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">maxRadius</span><span class="o">=</span><span class="n">max_rad_circle</span><span class="p">,</span>
+
+        <span class="p">)</span>
+
+        <span class="n">circles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">circles</span><span class="p">))</span>
+
+        <span class="c1"># guess inclination based on circles position</span>
+        <span class="n">incl</span> <span class="o">=</span> <span class="n">get_inclination</span><span class="p">(</span><span class="n">circles</span><span class="p">,</span> <span class="n">img_centre</span><span class="p">)</span>
+
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">redone_canny</span><span class="p">:</span>    <span class="c1"># if no circles found and also image quality improvements have been applied</span>
+            <span class="c1"># then we assume the circles are located on the other side with respect to the camera view</span>
+            <span class="k">global</span> <span class="n">rect_angle</span>
+            <span class="k">if</span> <span class="mi">180</span> <span class="o">&lt;</span> <span class="n">rect_angle</span> <span class="o">&lt;</span> <span class="mi">270</span><span class="p">:</span>  <span class="c1"># if rotated of an acute angle with respect to x-axis</span>
+                <span class="n">incl</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">incl</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="n">incl</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exception &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="n">canny_img</span><span class="p">(</span><span class="n">original_img</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># try again with better image quality and more precise circles detection</span>
+
+        <span class="n">incl</span> <span class="o">=</span> <span class="n">experimental_detect</span><span class="p">(</span><span class="n">original_img</span><span class="p">,</span> <span class="n">img_centre</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">no_blur</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">redone_canny</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">incl</span></div>
+
+
+<div class="viewcode-block" id="get_inclination"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.get_inclination">[docs]</a><span class="k">def</span> <span class="nf">get_inclination</span><span class="p">(</span><span class="n">circles</span><span class="p">,</span> <span class="n">img_centre</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the least squares polynomial fit in order to find best line that represents the circles&#39; centers. Based on that and on the distance between the image centre and the average position</span>
+<span class="sd">    of the circles&#39; centers we get a first estimation whether the block is for example upside-down or turned right</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    circles : numpy array</span>
+<span class="sd">        Array of the detected circles</span>
+
+<span class="sd">    img_centre: Tuple</span>
+<span class="sd">        Center of the detected block</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        rect_center (x,y), rectangle width and height, angle of rotation of the block</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x_cr</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y_cr</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># if more circles detected -&gt; create line to fit circles center and detect better if the block is top/bottom or right/left</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">circles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">circle</span> <span class="ow">in</span> <span class="n">circles</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">circle</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">circle</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="c1"># find best line to fit points and return a and b values of line</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;right_left&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="s2">&quot;top_bottom&quot;</span>
+
+    <span class="k">for</span> <span class="n">circle</span> <span class="ow">in</span> <span class="n">circles</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">x_cr</span> <span class="o">+=</span> <span class="n">circle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_cr</span> <span class="o">+=</span> <span class="n">circle</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">x_cr</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">circles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">y_cr</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">circles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">diff_x</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_cr</span><span class="p">)</span>
+    <span class="n">diff_y</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">img_centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_cr</span><span class="p">)</span>
+
+    <span class="n">inclination</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">diff_x</span> <span class="o">&gt;</span> <span class="n">diff_y</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x_cr</span> <span class="o">&lt;</span> <span class="n">img_centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">y_cr</span> <span class="o">&lt;</span> <span class="n">img_centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">y_cr</span> <span class="o">&lt;</span> <span class="n">img_centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">x_cr</span> <span class="o">&lt;</span> <span class="n">img_centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inclination</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">priority</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">priority</span> <span class="o">==</span> <span class="s2">&quot;right_left&quot;</span> <span class="ow">and</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;right&quot;</span> <span class="ow">and</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">inclination</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">priority</span> <span class="o">==</span> <span class="s2">&quot;top_bottom&quot;</span> <span class="ow">and</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;top&quot;</span> <span class="ow">and</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;bottom&quot;</span><span class="p">:</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">inclination</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">inclination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span>
+
+    <span class="k">return</span> <span class="n">inclination</span></div>
+
+
+<div class="viewcode-block" id="from_cropped_to_real_world_coord"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.from_cropped_to_real_world_coord">[docs]</a><span class="k">def</span> <span class="nf">from_cropped_to_real_world_coord</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">eps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple function for converting a point&#39;s coordinates in a cropped image to the coordinates in the original image taken from the camera (eventually already rescaled)</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    point : tuple</span>
+<span class="sd">        Coordinates of the point in the cropped image, to be converted back to the original image coordinates</span>
+
+<span class="sd">    x1, y1: Integer</span>
+<span class="sd">        Minimum 2D coordinate values (for x- and y-axis) in the original image</span>
+
+<span class="sd">    eps: Integer</span>
+<span class="sd">        Small delta that was applied before cropping the image in order to avoid losing some contours in Canny algorithm</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        2D coordinates in the original image (x,y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">real_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">+</span> <span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">real_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">+</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">real_x</span><span class="p">,</span> <span class="n">real_y</span></div>
+
+
+<div class="viewcode-block" id="calculate_depth"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.calculate_depth">[docs]</a><span class="k">def</span> <span class="nf">calculate_depth</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">res_mult</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the depth value given a 2D point&#39;s coordinates. Since some depth values could be None a workaround has been implemented which just calculates the avergage of the depths of the points</span>
+<span class="sd">    within a certain range from the given point</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    x,y : Integer</span>
+<span class="sd">        Coordinates of the point</span>
+
+<span class="sd">    res_mult: Float</span>
+<span class="sd">        Parameter necessary due to image scaling</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        2D coordinates in the original image (x,y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">raw_depth</span>  <span class="c1"># 960x540</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">res_mult</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">res_mult</span><span class="p">)</span>
+
+    <span class="n">points_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">inc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">inc</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">:</span>
+
+        <span class="n">non_nan</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">summ</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">x_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">inc</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">inc</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">y_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">inc</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">inc</span><span class="p">):</span>
+
+                <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">point_cloud2</span><span class="o">.</span><span class="n">read_points</span><span class="p">(</span><span class="n">raw_depth</span><span class="p">,</span> <span class="n">field_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">skip_nans</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                     <span class="n">uvs</span><span class="o">=</span><span class="p">[(</span><span class="nb">int</span><span class="p">(</span><span class="n">x_i</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y_i</span><span class="p">))]):</span>
+
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>  <span class="c1"># for each value in data[]</span>
+                        <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="n">d</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>  <span class="c1"># if not nan</span>
+                            <span class="n">summ</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">d</span>
+                            <span class="n">non_nan</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">non_nan</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">non_nan</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">non_nan</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># some values found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">summ</span><span class="p">):</span>
+                <span class="n">summ</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span> <span class="o">/</span> <span class="n">non_nan</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># averaging</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">summ</span>  <span class="c1"># summ contains the average</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># only nan found</span>
+            <span class="n">inc</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">points_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="o">-</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">points_list</span></div>
+
+
+<div class="viewcode-block" id="pca"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.pca">[docs]</a><span class="k">def</span> <span class="nf">pca</span><span class="p">(</span><span class="n">to_crop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read depth values of the 2D points given as input. Transform the 3D points read to a PointCloud and then to a PCA-compatible structure.</span>
+<span class="sd">    Apply Principal Component Analysis to the cropped Point Cloud; this will output how much the 3D directions (x, y, z) influence the 1st and 2nd principal component.</span>
+<span class="sd">    Find which is the cartesian axis which influences the most the first and second Principal Components. Based on that return the final block&#39;s inclination</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    to_crop : Array of tuples</span>
+<span class="sd">        Coordinates of the points we want to use in order to calculate the block&#39;s inclination</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Final block&#39;s inclination</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">raw_depth</span>
+    <span class="kn">import</span> <span class="nn">pcl</span>
+
+    <span class="n">points_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">min_pca</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">max_pca</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">prev</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">to_crop</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">point_cloud2</span><span class="o">.</span><span class="n">read_points</span><span class="p">(</span><span class="n">raw_depth</span><span class="p">,</span> <span class="n">field_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">skip_nans</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">uvs</span><span class="o">=</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">min_pca</span><span class="p">:</span>
+                <span class="n">min_pca</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_pca</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">max_pca</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">prev</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prev</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">prev</span> <span class="o">&gt;</span> <span class="mf">0.01</span><span class="p">:</span>
+                    <span class="n">prev</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="k">continue</span>
+
+            <span class="n">points_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">255</span><span class="p">])</span>  <span class="c1"># faking rgb values (255 for each point)</span>
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;empty point list&quot;</span>
+
+
+    <span class="n">pcl_data</span> <span class="o">=</span> <span class="n">pcl</span><span class="o">.</span><span class="n">PointCloud_PointXYZRGB</span><span class="p">()</span>
+    <span class="n">pcl_data</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="n">points_list</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">PCA</span>
+
+    <span class="c1"># Perform PCA</span>
+    <span class="n">pca_conv</span> <span class="o">=</span> <span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pca_conv</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">pcl_data</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error while fitting PCA&quot;</span><span class="p">)</span>
+
+    <span class="c1"># get index of most important feature for main component</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">main_max_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pca_conv</span><span class="o">.</span><span class="n">components_</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_val</span><span class="p">:</span>
+            <span class="n">main_max_idx</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">max_val</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># get index of most important feature for second component</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">second_max_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">second_second_val</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pca_conv</span><span class="o">.</span><span class="n">components_</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_val</span> <span class="ow">and</span> <span class="n">index</span> <span class="o">!=</span> <span class="n">main_max_idx</span><span class="p">:</span>
+            <span class="n">second_second_val</span> <span class="o">=</span> <span class="n">max_val</span>
+
+            <span class="n">second_max_idx</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">max_val</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="n">third_idx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">third_idx</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">main_max_idx</span><span class="p">)</span>
+    <span class="n">third_idx</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">second_max_idx</span><span class="p">)</span>
+
+    <span class="n">diff_second_comp</span> <span class="o">=</span> <span class="n">max_val</span> <span class="o">-</span> <span class="n">second_second_val</span>
+
+    <span class="n">major_features_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">main_max_idx</span><span class="p">,</span> <span class="n">second_max_idx</span><span class="p">]</span>
+
+    <span class="c1"># get real inclination</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">major_features_components</span> <span class="ow">and</span> <span class="n">diff_second_comp</span> <span class="o">&gt;</span> <span class="mf">0.2</span><span class="p">:</span>
+        <span class="c1"># print(&quot;leaning&quot;)</span>
+        <span class="n">incl</span> <span class="o">=</span> <span class="s2">&quot;leaning&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">major_features_components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># print(&quot;standing&quot;)</span>
+            <span class="n">incl</span> <span class="o">=</span> <span class="s2">&quot;standing&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># print(&quot;up_or_own&quot;)</span>
+            <span class="n">incl</span> <span class="o">=</span> <span class="s2">&quot;up_or_down&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inclination: </span><span class="si">{</span><span class="n">incl</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">incl</span></div>
+
+
+<span class="c1"># takes raw image and creates jpg-compliant image</span>
+<div class="viewcode-block" id="from_raw_to_jpg_compliant"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.from_raw_to_jpg_compliant">[docs]</a><span class="k">def</span> <span class="nf">from_raw_to_jpg_compliant</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform raw bytes representing image rgb values into a structure which can be saved also as a jpg. The function assumes the input definition is 960x540 and that it is a rgb image,</span>
+<span class="sd">    therefore reading 3 Bytes for each 2D point</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        image that can now be treated and used as a normal jpg image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">raw_image</span>
+
+
+    <span class="n">tot_data</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_image</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">960</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="mi">540</span>
+
+    <span class="n">image_arr</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">tot_data</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">riga</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">tot_data</span> <span class="o">/</span> <span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="n">riga</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s1">&#39;3B&#39;</span><span class="p">,</span> <span class="n">raw_image</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">j</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">tot_data</span> <span class="o">/</span> <span class="n">y</span><span class="p">)))</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">image_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">riga</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image_arr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+
+    <span class="c1"># now we could save the image for ex. as cv2.imwrite(f&quot;image.jpg&quot;, arr)</span>
+
+    <span class="k">return</span> <span class="n">arr</span></div>
+
+
+<div class="viewcode-block" id="image_depth_processing"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.image_depth_processing">[docs]</a><span class="k">def</span> <span class="nf">image_depth_processing</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function called by the callback which transforms the global raw_image to jpg and calls process_image()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">image</span> <span class="o">=</span> <span class="n">from_raw_to_jpg_compliant</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;image converted to jpg, starting processing&quot;</span><span class="p">)</span>
+    <span class="n">process_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;finished image processing&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="receive_pointcloud"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.receive_pointcloud">[docs]</a><span class="k">def</span> <span class="nf">receive_pointcloud</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback for the point cloud topic, updates the global variable raw_depth with the new values. It needs the lock for the depth to be acquired before updating it but just continues skipping the update</span>
+<span class="sd">    if the lock is already taken from process_image()</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    msg : PointCloud2</span>
+<span class="sd">        Entire Point Cloud read from depth camera</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">depth_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># don&#39;t want callback to wait indefinitely with an old msg</span>
+
+        <span class="k">global</span> <span class="n">raw_depth</span>
+
+        <span class="n">raw_depth</span> <span class="o">=</span> <span class="n">msg</span>
+
+        <span class="n">depth_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="receive_image"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.receive_image">[docs]</a><span class="k">def</span> <span class="nf">receive_image</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback for the RGB image topic, updates the global variable raw_image with the new values. It needs the lock for the rgb image to be acquired before updating it but just continues skipping the update</span>
+<span class="sd">    if the lock is already taken from process_image()</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    msg : Image</span>
+<span class="sd">        Entire RGB image read from the camera (definition 960x540)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># we need an if, else it would continue with the thread without having the lock</span>
+    <span class="k">if</span> <span class="n">image_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># don&#39;t want callback to wait indefinitely with an old msg</span>
+        <span class="k">global</span> <span class="n">raw_image</span>
+
+        <span class="n">raw_image</span> <span class="o">=</span> <span class="n">msg</span>
+
+        <span class="n">image_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="processing_callback"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.processing_callback">[docs]</a><span class="k">def</span> <span class="nf">processing_callback</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback for the main processing part, it is being called every 2 seconds by a rospy Timer. The function waits to acquire both the locks (remaining idle until it has got all of them) and</span>
+<span class="sd">    calls the functions responsible for the whole blocks&#39; detection process</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">raw_image</span>
+    <span class="k">global</span> <span class="n">raw_depth</span>
+
+    <span class="c1"># after an execution I want to require the lock only if data is new,</span>
+    <span class="c1"># otherwise a lot of processing_callbacks would enqueue and not allow image and depth</span>
+    <span class="c1"># callbacks to update the data</span>
+    <span class="k">if</span> <span class="n">raw_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">raw_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># here we want blocking locks as every tot seconds we MUST execute the processing part</span>
+        <span class="k">if</span> <span class="n">image_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="n">depth_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># by default blocking is True</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;callback&quot;</span><span class="p">)</span>
+
+            <span class="n">image_depth_processing</span><span class="p">()</span>
+
+            <span class="n">image_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+            <span class="n">depth_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+            <span class="n">raw_image</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">raw_depth</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<span class="c1"># instruction used just for printing options, how certain variables (ex. Floats) are displayed</span>
+<span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">suppress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># global variables</span>
+<span class="n">raw_image</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">raw_depth</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">rect_angle</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">res_pub</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># define locks for blocking access to the global depth and rgb image in order to allow process_image() to maintain its integrity during its whole execution</span>
+<span class="n">image_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="n">depth_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="listener"><a class="viewcode-back" href="../../vision.html#vision.visione_lab.listener">[docs]</a><span class="k">def</span> <span class="nf">listener</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;First setup function for establishing the connection with the ROS middleware infrastructure, creating the vision_node, subscribing to the depth and image topics, setting up a publisher for sharing</span>
+<span class="sd">    the results with the other ROS nodes (ex. the robot) and configuring all the other callbacks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="s1">&#39;vision_node&#39;</span><span class="p">,</span> <span class="n">anonymous</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># registering to image raw (left)</span>
+    <span class="c1"># rospy.Subscriber(&quot;/ur5/zed_node/left/image_rect_color&quot;, Image, callback=receive_image, queue_size=1)</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">Subscriber</span><span class="p">(</span><span class="s2">&quot;/ur5/zed_node/left_raw/image_raw_color&quot;</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">receive_image</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># registering to depth raw</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">Subscriber</span><span class="p">(</span><span class="s2">&quot;/ur5/zed_node/point_cloud/cloud_registered&quot;</span><span class="p">,</span> <span class="n">PointCloud2</span><span class="p">,</span>
+                     <span class="n">callback</span><span class="o">=</span><span class="n">receive_pointcloud</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">global</span> <span class="n">res_pub</span>
+    <span class="n">res_pub</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Publisher</span><span class="p">(</span><span class="s1">&#39;vision_results&#39;</span><span class="p">,</span> <span class="n">BlockList</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Create a ROS Timer for publishing data</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="n">rospy</span><span class="o">.</span><span class="n">Duration</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">processing_callback</span><span class="p">)</span>
+
+    <span class="n">rospy</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">listener</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, matteo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

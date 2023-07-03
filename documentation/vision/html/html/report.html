@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project report &mdash; vision 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Robotics project" href="vision.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            vision
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vision.html">Robotics project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project report</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Project report</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#abstract">Abstract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tasks">Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-software">Basic Software</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#computer-vision">Computer Vision</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools">TOOLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#block-s-detection-workflow">BLOCK’S DETECTION WORKFLOW</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#kinematics">Kinematics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#forward-kinematics">Forward Kinematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inverse-kinematics">Inverse Kinematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evaluate-configuration">Evaluate Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#p2p">P2P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-functionalities">Other Functionalities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extra">Extra</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-indicators">Performance indicators</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vision</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Project report</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="project-report">
+<h1>Project report<a class="headerlink" href="#project-report" title="Permalink to this heading"></a></h1>
+<p><strong>Introduction to Robotics</strong></p>
+<p><strong>University of Trento</strong></p>
+<p>Matteo Beltrami &amp; Damiano Bertolini &amp; Massimo Girardelli</p>
+<section id="abstract">
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this heading"></a></h2>
+<p>This project uses a model of a UR5 robotic manipulator in order to pick and move lego blocks in certain positions. The blocks are first detected by using a 3D depth camera and classified by using different computer vision techniques such as YOLOv5 and OpenCV. The robot used both in simulation and in the real world is the 5th version of the 6 degree of freedom arm by Universal Robots. The camera used was the ZED 2 camera by Stereolabs. The purpose of this project is to develop a sw prototype able to recognize and move objects for a future implementation in the industrial sector.</p>
+</section>
+<section id="tasks">
+<h2>Tasks<a class="headerlink" href="#tasks" title="Permalink to this heading"></a></h2>
+<p>The objective of this project is to use the manipulator to pick the lego blocks standing on a table and to move them in specified locations according to the specific assignment.
+The blocks first need to be identified in the 3D space using the ZED stereo camera (x,y,z, rotation and orientation of the block); as a second step they need to be classified among 11 different types (also called classes); the robot can then pick them up and move them into the desired position.
+The tasks are 4 and here is a brief description for each of them:</p>
+<ol class="arabic simple">
+<li><p>Only one lego block is standing on the table with its base in natural contact with the ground. The brick has to be moved to a certain position, specific for its class;</p></li>
+<li><p>Multiple lego blocks are standing on the table, one for each class. The bricks have to be moved to a certain position, specific for their class;</p></li>
+<li><p>Multiple lego blocks are standing on the table and can be lying on one of their lateral sides or on their top. Objects of the same class have to be stacked up to form a tower;</p></li>
+<li><p>The objects are positioned randomly on the stand and have to be moved to create a composite object with a known design.</p></li>
+</ol>
+</section>
+<section id="basic-software">
+<h2>Basic Software<a class="headerlink" href="#basic-software" title="Permalink to this heading"></a></h2>
+<p>As a backbone for connecting and allowing communication between the different software components the ROS middleware has been used, with topics and services sharing messages to the parties.
+The application software has been divided into two main areas, the former implementing the vision part making use of the output of the camera and the latter taking care of the kinematics, i.e. the motion of the robot.
+The vision part was mainly written in Python as it makes use of some high-end computer vision and object recognition libraries well implemented in such programming language.
+The kinematics part is instead mainly written in C++ and exploits among others a library for matrix manipulation.</p>
+</section>
+<section id="computer-vision">
+<h2>Computer Vision<a class="headerlink" href="#computer-vision" title="Permalink to this heading"></a></h2>
+<p>This section reports the process of detecting and classifying the blocks; the generic tools and algorithms used in our project are Blender, YOLOv5, OpenCV, and PCA techniques.</p>
+<section id="tools">
+<h3>TOOLS<a class="headerlink" href="#tools" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Blender</strong>: A free and open-source software that supports 3D modeling and rendering useful for synthetic datasets creation.</p></li>
+<li><p><strong>YOLOv5</strong>: A model in the You Only Look Once (YOLO) family of computer vision models, commonly used for object detection.</p></li>
+<li><p><strong>OpenCV</strong>: A library of programming functions mainly for real-time computer vision which contains a great variety of algorithms that can also be used for 3D pose estimation.</p></li>
+<li><p><strong>Principal Component Analysis (PCA)</strong>: A Machine Learning technique for analyzing large datasets containing a high number of dimensions, decreasing the number of features while preserving the maximum amount of information.</p></li>
+</ul>
+</section>
+<section id="block-s-detection-workflow">
+<h3>BLOCK’S DETECTION WORKFLOW<a class="headerlink" href="#block-s-detection-workflow" title="Permalink to this heading"></a></h3>
+<ol class="arabic">
+<li><p>In order to train the YOLOv5 neural network, it is necessary to have a dataset that well represents both the simulated and real environments. To generate the images we used Blender to recreate the environment and through its scripting tool it was possible to automate the generation of images with random arrangements of the blocks position, pose, color, brightness conditions, and shadows for augmenting the variancy. Also labels of blocks, class, and position were added automatically through blender rendering tools. The final dataset was composed of a total of 10k labeled images with a resolution of 640x360 (no higher resolution was actually required since YOLO already performs very well with 640-pixel images, a better quality is instead required later for OpenCV algorithms), in 200 of which the table was completely empty in order to prevent overfitting and cover also the limit cases.</p>
+<blockquote>
+<div><figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/dataset.jpg"><img alt="Dataset image generated with Blender" src="_images/dataset.jpg" style="width: 50%;" /></a>
+<figcaption>
+<p><span class="caption-text">Dataset image generated with Blender</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</li>
+<li><p>The dataset was trained for 100 epochs through GPUs available on Google Colab; some images were left for validation (run every epoch) and others for the final test. The images were divided into sets as follows: 70% training set, 20% validation set, 10% test set, and the training phase didn’t involve data augmentation techniques. The precision reached by the model on the test images was 99.1%, and no effects possibly caused by overfitting were detected. Weights were then downloaded for being loaded by the Python script. Since we noticed that this model was working pretty well on the images captured by the ZED camera in the real world, we decided to use it also for that environment.</p></li>
+<li><p>The vision ROS node gets the Point Cloud and RGB image from the ZED camera and runs the latter through the Neural Network, giving as output the blocks detected and their bounding boxes.</p></li>
+<li><p>For each block within the table boundaries (eventual false positives are discarded), the following process is executed:</p>
+<blockquote>
+<div><ol class="loweralpha">
+<li><p>The bounding box is cropped from the original RGB image.</p></li>
+<li><p>Canny algorithm is used for detecting the block’s edges.</p></li>
+<li><p>The smallest rectangle circumscribing the largest contour (i.e., the block’s shape) is found, therefore identifying the center and rotation of the block.</p></li>
+<li><p>A first guess of the inclination of the block is given: this is done first by detecting circles in the bounding box, then by comparing their average position with the block’s center and by analyzing the derivative of the least squares polynomial fit best representing the circles’ centers.</p></li>
+<li><p>Finally, Principal Component Analysis is applied to the Point Cloud cropped based on the 2D bounding box; this algorithm (in an abstract way) draws the lines (or planes) that approximate the data as well as possible in the least squares sense making the variance of the coordinates on the line or plane as large as possible. These N-Dimensional spaces are called Principal Components, and PCA is able to tell us how much the Cartesian x, y, and z directions are influencing these components. As an example, imagine a parallelepiped going from the left to the right of your eyes, its Principal Component will be in that direction since there is the majority of the variance of the points composing the block. Based on the first two eigenvectors, we can give a good estimation of the block’s 3D orientation.</p>
+<blockquote>
+<div><figure class="align-left" id="id2">
+<a class="reference internal image-reference" href="_images/cropped.jpg"><img alt="_images/cropped.jpg" src="_images/cropped.jpg" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text">a</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-left" id="id3">
+<a class="reference internal image-reference" href="_images/cannied.jpg"><img alt="_images/cannied.jpg" src="_images/cannied.jpg" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text">b</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-left" id="id4">
+<a class="reference internal image-reference" href="_images/det_circles.jpg"><img alt="_images/det_circles.jpg" src="_images/det_circles.jpg" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text">c</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-left" id="id5">
+<a class="reference internal image-reference" href="_images/minRect.jpg"><img alt="_images/minRect.jpg" src="_images/minRect.jpg" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text">d</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>The results are then published in a topic the kinematic part is subscribed to and contain the full 3D information about each detected block.</p></li>
+</ol>
+<figure class="align-center" id="fig-message">
+<a class="reference internal image-reference" href="_images/vision_message.png"><img alt="_images/vision_message.png" src="_images/vision_message.png" style="width: 30%;" /></a>
+<figcaption>
+<p><span class="caption-text">Vision message published.</span><a class="headerlink" href="#fig-message" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="kinematics">
+<h2>Kinematics<a class="headerlink" href="#kinematics" title="Permalink to this heading"></a></h2>
+<p>The main components of the kinematics are:</p>
+<ul class="simple">
+<li><p>forward kinematics;</p></li>
+<li><p>inverse kinematics;</p></li>
+<li><p>evaluate configuration;</p></li>
+<li><p>p2p</p></li>
+</ul>
+<section id="forward-kinematics">
+<h3>Forward Kinematics<a class="headerlink" href="#forward-kinematics" title="Permalink to this heading"></a></h3>
+<p>Takes as inputs joint position and computes the transformation matrix for every joint and arm and multiplies then together to get a final matrix T0e, the transformation matrix from the base to the end effector, this is also saved inside the class since it’s used multiple times.</p>
+</section>
+<section id="inverse-kinematics">
+<h3>Inverse Kinematics<a class="headerlink" href="#inverse-kinematics" title="Permalink to this heading"></a></h3>
+<p>Takes a position of the end effector as input and computes the inverse kinematics.
+The solution is a 8x6 matrix, one line for every possible configuration for the ur5 arm.</p>
+</section>
+<section id="evaluate-configuration">
+<h3>Evaluate Configuration<a class="headerlink" href="#evaluate-configuration" title="Permalink to this heading"></a></h3>
+<p>Given a joint state, computes the IK and compares all 8 configurations with the current one, the value closer to 0 is the index of the current configuration. This index is saved and used for the rest of the procedure.
+This avoids problems when the arm was rotated from previous uses, especially the shoulder joint and prevents the robot from spinning and hitting the table at the start of the procedure.</p>
+</section>
+<section id="p2p">
+<h3>P2P<a class="headerlink" href="#p2p" title="Permalink to this heading"></a></h3>
+<p>The p2p is the solution we used to calculate the movement of the arm. The robot is controlled in the joint space so the solution fits the technology.
+It is a cubical  interpolation from the starting joint configuration to the final.
+The function has 4 internal constraints:</p>
+<ol class="arabic simple">
+<li><p>q(t<sub>start</sub>) =q<sub>start</sub>, the first position is the start position ;</p></li>
+<li><p>q(t<sub>finish</sub>) = q<sub>finish</sub>, the last position is the final position;</p></li>
+<li><p>q’(t<sub>start</sub>)=0, the speed at the start is 0;</p></li>
+<li><p>q’(t<sub>finish</sub>)=0, the speed at the end is 0.</p></li>
+</ol>
+<p>This guarantees a smooth transition from start to finish without sudden stops or unwanted accelerations.
+It takes an initial and final position in 3D and the number of iterations, here is the breakdown of the function:</p>
+<ol class="arabic simple">
+<li><p>calculates the IK of the starting and final point and get 2 joint states;</p></li>
+<li><p>subtracts the 2 joint states to get and offset for each joint, we will work in the range (0, offset) from now on;</p></li>
+<li><p>wraps the offset in [-180,180) degrees so the joint takes the shortest path in the circle;</p></li>
+<li><p>build a Matrix for the polynomial solution without coefficients;</p></li>
+<li><p>for every joint, if M * A = B, where A are the coefficients and B are the constraints, then A = M <sup>-1</sup> * B;</p></li>
+<li><p>for every joint and every step, with A as coefficients, find the value of the polynomial at a given time;</p></li>
+<li><p>add back the starting value to the offset to get the correct value.</p></li>
+</ol>
+<p>The result is the the form of a list of 6D vectors, one for each step.</p>
+<p>The effects are visible in this figure.</p>
+<figure class="align-center" id="fig-effect">
+<img alt="_images/effect.png" src="_images/effect.png" />
+<figcaption>
+<p><span class="caption-text">Position, Speed and Acceleration over time.</span><a class="headerlink" href="#fig-effect" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Other implementations could use 5th order polynomial to make acceleration 0 at the start and end or trapezoidal time scaling to maintain a fixed max speed.</p>
+<p>We decided to wrap the angles to find the shortest rotation, for example a movement from 0 to 270° is shorter if we move from 0 to -90° and because the ur5 already uses angles in the range (-360°,360°), so if a theoretical final angle is 100° and the starting is -270° a risk of spinning the joint around itself multiple times, while in practice we can look at -270° as 90°, so just a 10° rotation.</p>
+<p>The use of a p2p plan makes the robot move in a more circular path, most of the movements are done with the first joint, this also helps to avoid singularities under the base and is really fast (0.017s, on a home computer for 10000 iterations), because the IK is done only twice for the whole process, other differential kinematics implementation what work in the work space may need to compute it at least once for every iteration.
+This p2p implementation also has weaknesses, for example it can’t follow a path, to solve this problem, a linear polynomial with a  parabolic blend can be used.</p>
+</section>
+<section id="other-functionalities">
+<h3>Other Functionalities<a class="headerlink" href="#other-functionalities" title="Permalink to this heading"></a></h3>
+<p>The Robot class is the controller of the ur5, it uses ROS to listen on /ur5/joint_states and publishes on /ur5/joint_group_pos_controller/command and /gripper rostopic channels.
+A callback copies the values of the joints constantly published by the robot inside a vector to be used more easily, some of the joints are not in order when published so they are also sorted, this callback also knows if it’s in a simulation where there are more than 6 joints published.
+This class published the commands for the robot in the Float64MultiArray format for every robot joint and eventually gripper joint.
+With the method move_to() the end effector moves to the desired position in the number of steps that are passed:</p>
+<ol class="arabic simple">
+<li><p>Calculates the current ee position with forward kinematics and the current joint state published from the robot;</p></li>
+<li><p>Uses p2p to get a list of joint positions to follow;</p></li>
+<li><p>(optional) save the path for debugging;</p></li>
+<li><p>publish 1 message every 1ms, the waiting is done with ros and not with a normal sleep because it syncs the execution of every loop and not just wait without taking in consideration the execution time of the commands in the loop.</p></li>
+</ol>
+<p>The main starts the robot callbacks and the vision callback via ros on the rostopic “vision_results” and waits for everything to be ready.
+Once a non-empty vision message arrives, it starts the procedure:</p>
+<ol class="arabic simple">
+<li><p>evaluates the IK index for the robot configuration;</p></li>
+<li><p>asks for mode to operate: testing (performs some default movements before going in automatic), manual (moves to a location following a txt file with the end point and rotation and moves the gripper before going in automatic), or automatic;</p></li>
+<li><p>move to a default position;</p></li>
+<li><p>gets the position of the next block from the vision messages, type and rotation;</p></li>
+<li><p>corrects the final position based on the block and rotation;</p></li>
+<li><p>go above the block;</p></li>
+<li><p>lower the arm;</p></li>
+<li><p>close the gripper;</p></li>
+<li><p>move the arm up;</p></li>
+<li><p>go to the default position;</p></li>
+<li><p>go to the final position based on the class;</p></li>
+<li><p>lower the arm;</p></li>
+<li><p>open the gripper;</p></li>
+<li><p>if there are more blocks in the list go back to 4;</p></li>
+<li><p>wait for vision messages and go back to point 1.</p></li>
+</ol>
+<p>The correction of the final position is needed for blocks that shorter and for blocks that are standing or on the side.</p>
+<p>The Helper class contains all the functionalities that were needed but not related to one single class, contains methods to constrain angles, conversion of coordinates from world to robot frame and legacy code.</p>
+</section>
+<section id="extra">
+<h3>Extra<a class="headerlink" href="#extra" title="Permalink to this heading"></a></h3>
+<p>Some extra tools were developed to better work on the project:</p>
+<ul class="simple">
+<li><p>Block spawner: C program that automatically creates a working world for Gazebo with blocks in different types, positions and numbers;</p></li>
+<li><p>my_vision_messages: ROS messages to share vision.</p></li>
+</ul>
+</section>
+</section>
+<section id="performance-indicators">
+<h2>Performance indicators<a class="headerlink" href="#performance-indicators" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td rowspan="2"><p>Task1</p></td>
+<td><p>KPI 1-1</p></td>
+<td><p>14s</p></td>
+</tr>
+<tr class="row-even"><td><p>KPI 1-2</p></td>
+<td><p>33s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Task2</p></td>
+<td><p>KPI 2-1</p></td>
+<td><p>184s (3 objects)</p></td>
+</tr>
+</tbody>
+</table>
+<p>The breakdown on the timing is:</p>
+<ol class="arabic simple">
+<li><p>Vision detection</p></li>
+<li><p>path calculation</p></li>
+<li><p>movement</p></li>
+<li><p>sleep.</p></li>
+</ol>
+<p>Note: all timescales were taken on a home pc with very limited resources and from a fresh start of the applications. The lab environment is much faster.
+For object recognition, since machine learning is used the first start is slow (14s on home pc and 3.5s on lab) and every run after the first is very fast (lab, total 0,5 seconds for single block and 0.6 for 5 blocks).</p>
+<p>The path calculation is almost instantaneous, 0.017s for a 10000 step.
+The movement of the arm is splitted in 7 segments per block +1, each segment is divided in a number of 1ms steps, 2000 for task 1 and 4000 for task 2.</p>
+<p>The arm can go very fast but we decided to use it in a slower configuration to avoid damaging the equipment and have time to react in case of risky situations.
+The sleep is both needed to have a short fraction of time to evaluate the situation and eventually stop the robot and to have time to publish the gripper via LUa script, this execution is asynchronous but it interferes with the robot commands and needs to be completed before other commands are sent, this is why there are long sleeps when the gripper is being closed or opened.</p>
+<p>The KPI timing could be improved by launching the vision before and keep it running while the robot is starting, using the lab pc which is much faster, reducing the steps to make the robot faster, eliminate sleeps and use the commands from the control tablet to operate the gripper. This could lead to theoretical KPI of:</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td rowspan="2"><p>Task1</p></td>
+<td><p>KPI 1-1</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-even"><td><p>KPI 1-2</p></td>
+<td><p>15s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Task2</p></td>
+<td><p>KPI 2-1</p></td>
+<td><p>44s (3 objects)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="vision.html" class="btn btn-neutral float-left" title="Robotics project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, matteo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
