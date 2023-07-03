@@ -1,0 +1,4 @@
+<map id="Kin::p2p" name="Kin::p2p">
+<area shape="rect" id="node1" title="creates a joint path between 2 points in space" alt="" coords="179,5,253,32"/>
+<area shape="rect" id="node2" href="$class_robot.html#a84ae13c01a86fa3b3c020de0ee59cbca" title="moves the robot to a given position &#160;calculates the path from the current position and &#160;&#160;the final on..." alt="" coords="5,5,131,32"/>
+</map>

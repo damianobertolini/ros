@@ -1,0 +1,7 @@
+<map id="Helper::constrainAngle180" name="Helper::constrainAngle180">
+<area shape="rect" id="node1" title="constrains angle to [&#45;180,180]" alt="" coords="368,31,563,57"/>
+<area shape="rect" id="node2" href="$class_kin.html#ab585d8cc2566972b027d8ad98461c464" title="evaluates the pose of a given joint configuration" alt="" coords="179,5,320,32"/>
+<area shape="rect" id="node4" href="$class_kin.html#ad9037b3d067ec8ca5aae8c53c65db86b" title="creates a joint path between 2 points in space" alt="" coords="212,56,287,83"/>
+<area shape="rect" id="node3" href="$main_8cpp.html#a1c74e98f2b582e43765f30a56f0205ee" title="starts the procedure once a blocklist message has been provided" alt="" coords="25,5,111,32"/>
+<area shape="rect" id="node5" href="$class_robot.html#a84ae13c01a86fa3b3c020de0ee59cbca" title="moves the robot to a given position &#160;calculates the path from the current position and &#160;&#160;the final on..." alt="" coords="5,56,131,83"/>
+</map>

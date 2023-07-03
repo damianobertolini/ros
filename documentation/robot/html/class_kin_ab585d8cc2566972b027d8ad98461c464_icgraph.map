@@ -1,0 +1,4 @@
+<map id="Kin::eval_ik_index" name="Kin::eval_ik_index">
+<area shape="rect" id="node1" title="evaluates the pose of a given joint configuration" alt="" coords="140,5,281,32"/>
+<area shape="rect" id="node2" href="$main_8cpp.html#a1c74e98f2b582e43765f30a56f0205ee" title="starts the procedure once a blocklist message has been provided" alt="" coords="5,5,92,32"/>
+</map>

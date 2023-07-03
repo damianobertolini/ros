@@ -1,0 +1,6 @@
+<map id="Robot::move_to_shoulder" name="Robot::move_to_shoulder">
+<area shape="rect" id="node1" title="moves only the shoulder joint for the robot &#160;&#160;used to reduce the chance of collision of the robot arm" alt="" coords="5,56,193,83"/>
+<area shape="rect" id="node2" href="$class_kin.html#aec6ac8ffafd4f63335e21fa088d962e1" title="computes forward kinematic and loads the inner varables of the class for future uses" alt="" coords="241,5,368,32"/>
+<area shape="rect" id="node3" href="$class_kin.html#a63b19e3ea3f16db0132bfdd1aec2f1bb" title="computes inverse kinematics" alt="" coords="241,56,368,83"/>
+<area shape="rect" id="node4" href="$class_kin.html#a992d4e39f8ff9556682a02c370dad160" title="returns current position and euler rotation for the loaded" alt="" coords="241,107,368,133"/>
+</map>

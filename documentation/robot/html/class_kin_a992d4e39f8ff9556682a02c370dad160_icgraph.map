@@ -1,0 +1,5 @@
+<map id="Kin::get_pr_now" name="Kin::get_pr_now">
+<area shape="rect" id="node1" title="returns current position and euler rotation for the loaded" alt="" coords="241,31,368,57"/>
+<area shape="rect" id="node2" href="$class_robot.html#a84ae13c01a86fa3b3c020de0ee59cbca" title="moves the robot to a given position &#160;calculates the path from the current position and &#160;&#160;the final on..." alt="" coords="37,5,162,32"/>
+<area shape="rect" id="node3" href="$class_robot.html#a60298d856a924c537829809dde32c79c" title="moves only the shoulder joint for the robot &#160;&#160;used to reduce the chance of collision of the robot arm" alt="" coords="5,56,193,83"/>
+</map>

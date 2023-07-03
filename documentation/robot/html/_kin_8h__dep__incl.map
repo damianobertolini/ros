@@ -1,0 +1,7 @@
+<map id="test_cpp/src/Kin.h" name="test_cpp/src/Kin.h">
+<area shape="rect" id="node1" title="kinematics header class for the ur5 robot" alt="" coords="126,5,263,32"/>
+<area shape="rect" id="node2" href="$_kin_8cpp.html" title="kinematics class for the ur5 robot" alt="" coords="5,80,157,107"/>
+<area shape="rect" id="node3" href="$main_8cpp.html" title="main file for robot procedure" alt="" coords="113,155,277,181"/>
+<area shape="rect" id="node4" href="$robot_8h.html" title="robot header class for ur5 manipulator" alt="" coords="233,80,383,107"/>
+<area shape="rect" id="node5" href="$robot_8cpp.html" title="robot class for ur5 manipulator" alt="" coords="301,155,467,181"/>
+</map>

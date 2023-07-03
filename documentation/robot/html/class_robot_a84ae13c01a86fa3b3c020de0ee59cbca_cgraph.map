@@ -1,0 +1,10 @@
+<map id="Robot::move_to" name="Robot::move_to">
+<area shape="rect" id="node1" title="moves the robot to a given position &#160;calculates the path from the current position and &#160;&#160;the final on..." alt="" coords="5,107,131,133"/>
+<area shape="rect" id="node2" href="$class_kin.html#aec6ac8ffafd4f63335e21fa088d962e1" title="computes forward kinematic and loads the inner varables of the class for future uses" alt="" coords="179,5,305,32"/>
+<area shape="rect" id="node3" href="$class_helper.html#a89480516cc72b2ed60cb0596c24aa316" title="calculates the distance between 2 positions in space" alt="" coords="193,56,291,83"/>
+<area shape="rect" id="node4" href="$class_kin.html#af75d397faf214d72adda456a1bb9084f" title="returns the position of the end effector" alt="" coords="187,107,297,133"/>
+<area shape="rect" id="node5" href="$class_kin.html#a992d4e39f8ff9556682a02c370dad160" title="returns current position and euler rotation for the loaded" alt="" coords="179,157,305,184"/>
+<area shape="rect" id="node6" href="$class_kin.html#ad9037b3d067ec8ca5aae8c53c65db86b" title="creates a joint path between 2 points in space" alt="" coords="205,208,279,235"/>
+<area shape="rect" id="node7" href="$class_helper.html#a8100ab8c6cf62d5d92704a2acb9efbe6" title="constrains angle to [0,360[" alt="" coords="365,183,536,209"/>
+<area shape="rect" id="node8" href="$class_helper.html#aa96fe6e318ec1f65fb03ec39c4d537a8" title="constrains angle to [&#45;180,180]" alt="" coords="353,233,548,260"/>
+</map>
