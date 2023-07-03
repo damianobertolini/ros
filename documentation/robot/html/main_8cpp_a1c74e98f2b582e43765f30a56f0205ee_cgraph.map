@@ -1,0 +1,8 @@
+<map id="procedure" name="procedure">
+<area shape="rect" id="node1" title="starts the procedure once a blocklist message has been provided" alt="" coords="5,81,92,108"/>
+<area shape="rect" id="node2" href="$class_kin.html#ab585d8cc2566972b027d8ad98461c464" title="evaluates the pose of a given joint configuration" alt="" coords="140,56,281,83"/>
+<area shape="rect" id="node6" href="$class_robot.html#aad276a136acf286c4edadace34dcb099" title="converts joint state message to Eigen vector of 6 joints" alt="" coords="157,107,264,133"/>
+<area shape="rect" id="node3" href="$class_helper.html#a8100ab8c6cf62d5d92704a2acb9efbe6" title="constrains angle to [0,360[" alt="" coords="341,5,512,32"/>
+<area shape="rect" id="node4" href="$class_helper.html#aa96fe6e318ec1f65fb03ec39c4d537a8" title="constrains angle to [&#45;180,180]" alt="" coords="329,56,524,83"/>
+<area shape="rect" id="node5" href="$class_helper.html#aa9318ee5d55c5da8518055f447234b4b" title="wrapps differences in angles" alt="" coords="345,107,509,133"/>
+</map>
